@@ -11,3 +11,19 @@ broadcast/
 .DS_Store
 Thumbs.db
 *.log
+
+# Next.js
+nft-frontend/.next/
+nft-frontend/out/
+nft-frontend/node_modules/
+nft-frontend/*.tsbuildinfo
+nft-frontend/next-env.d.ts
+
+# Environment variables
+nft-frontend/.env*.local
+
+
+/out/
+next-env.d.ts
+*.tsbuildinfo
+node_modules/
