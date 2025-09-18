@@ -15,7 +15,7 @@ const wagmiConfig = getDefaultConfig({
   transports: {
     [foundry.id]: http(process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://localhost:8545'),
     [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
-    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
+//    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
   },
 })
 

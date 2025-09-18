@@ -182,7 +182,11 @@ export function NFTCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setShowDetails(!showDetails)
+                  if (metadata?.image) {
+                    // Convertir IPFS vers gateway HTTP et ouvrir
+                    const imageUrl = metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/')
+                    window.open(imageUrl, '_blank')
+                  }
                 }}
                 className="rounded-full bg-white/90 p-2 text-black hover:bg-white transition-colors"
               >

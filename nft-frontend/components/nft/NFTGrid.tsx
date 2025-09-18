@@ -1,8 +1,9 @@
-// components/nft/NFTGrid.tsx
+// components/nft/NFTGrid.tsx - VERSION CORRIGÉE
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useAccount } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { NFTCard, NFTCardSkeleton } from './NFTCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -21,6 +22,8 @@ import {
   Eye
 } from 'lucide-react'
 import { useCollectionInfo, useUserNFTs, useCollectionStats } from '@/hooks/useModularNFT'
+import { MODULAR_NFT_ABI, getContractAddress } from '@/lib/contracts/ModularNFT'
+import { useChainId } from 'wagmi'
 
 interface NFTWithMetadata {
   tokenId: number
@@ -55,6 +58,9 @@ export function NFTGrid({
   onNFTClick 
 }: NFTGridProps) {
   const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = getContractAddress(chainId as keyof typeof import('@/lib/contracts/ModularNFT').CONTRACT_ADDRESSES)
+  
   const { collectionInfo, isLoading: isLoadingCollection, refetch: refetchCollection } = useCollectionInfo()
   const { userNFTs, isLoading: isLoadingUserNFTs } = useUserNFTs(address)
   const collectionStats = useCollectionStats()
@@ -65,68 +71,250 @@ export function NFTGrid({
   const [sortBy, setSortBy] = useState<'tokenId' | 'name' | 'rarity'>('tokenId')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showOnlyOwned, setShowOnlyOwned] = useState(false)
+  const [allNFTs, setAllNFTs] = useState<NFTWithMetadata[]>([])
+  const [loadingMetadata, setLoadingMetadata] = useState(false)
 
-  // Mock data pour la démonstration - À remplacer par les vraies données
-  const mockNFTs: NFTWithMetadata[] = useMemo(() => {
-    if (!collectionInfo) return []
-    
-    const nfts: NFTWithMetadata[] = []
-    
-    // Ajouter les NFTs de l'utilisateur s'il est connecté
-    if (userNFTs.length > 0) {
-      userNFTs.forEach(nft => {
-        nfts.push({
-          tokenId: nft.tokenId,
-          owner: nft.owner,
-          tokenURI: nft.tokenURI,
-          royaltyRecipient: nft.royaltyRecipient,
-          royaltyPercentage: nft.royaltyPercentage,
-          metadata: {
-            name: `${collectionInfo.name} #${nft.tokenId}`,
-            description: `A unique NFT from the ${collectionInfo.name} collection`,
-            image: `ipfs://QmMockHash${nft.tokenId}`,
-            attributes: [
-              { trait_type: 'Rarity', value: ['Common', 'Rare', 'Epic', 'Legendary'][nft.tokenId % 4] },
-              { trait_type: 'Style', value: ['Photography', 'Digital Art', 'Abstract'][nft.tokenId % 3] },
-              { trait_type: 'Color', value: ['Vibrant', 'Monochrome', 'Pastel'][nft.tokenId % 3] }
-            ]
-          }
+  // Lire le total supply pour connaître le nombre de NFTs mintés
+  const { data: totalSupply } = useReadContract({
+    address: contractAddress,
+    abi: MODULAR_NFT_ABI,
+    functionName: 'totalSupply',
+  })
+
+  // Fonction pour récupérer les métadonnées depuis IPFS
+  const fetchMetadata = async (tokenURI: string) => {
+    try {
+      console.log('Fetching metadata from:', tokenURI)
+      
+      // Validation et nettoyage de l'URI
+      if (!tokenURI || !tokenURI.startsWith('ipfs://')) {
+        console.error('Invalid IPFS URI:', tokenURI)
+        return null
+      }
+      
+      // Convertir ipfs:// vers gateway HTTP
+      const ipfsHash = tokenURI.replace('ipfs://', '')
+      const httpUrl = `https://ipfs.io/ipfs/${ipfsHash}`
+      
+      console.log('HTTP URL:', httpUrl)
+      
+      const response = await fetch(httpUrl)
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch metadata from ${httpUrl}:`, response.status)
+        return null
+      }
+      
+      const metadata = await response.json()
+      console.log('Metadata loaded:', metadata)
+      return metadata
+    } catch (error) {
+      console.error('Error fetching metadata:', error)
+      return null
+    }
+  }
+
+  // Fonction pour récupérer les infos d'un token spécifique
+  const fetchTokenInfo = async (tokenId: number) => {
+    try {
+      // Utiliser les hooks directement ici ne marche pas, on doit faire un appel direct
+      const response = await fetch('http://localhost:8545', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_call',
+          params: [
+            {
+              to: contractAddress,
+              data: `0x4566c5ef${tokenId.toString(16).padStart(64, '0')}`, // getTokenInfo(uint256)
+            },
+            'latest'
+          ],
+          id: 1
         })
       })
+
+      const data = await response.json()
+      console.log('RPC response for token', tokenId, ':', data)
+      
+      if (data.error) {
+        console.error('RPC Error:', data.error)
+        return null
+      }
+
+      // Pour l'instant, retournons des données basiques qu'on peut récupérer
+      // On va utiliser une approche plus simple
+      return null
+    } catch (error) {
+      console.error('Error fetching token info:', error)
+      return null
     }
-    
-    // Ajouter quelques NFTs mock pour la démo
-    const mockCount = Math.min(12, collectionInfo.totalSupply)
-    for (let i = 1; i <= mockCount; i++) {
-      if (!nfts.find(nft => nft.tokenId === i)) {
-        nfts.push({
-          tokenId: i,
-          owner: `0x${'0'.repeat(36)}${i.toString(16).padStart(4, '0')}`,
-          tokenURI: `ipfs://QmMockHash${i}`,
-          royaltyRecipient: collectionInfo.name.includes('Owner') ? `0x${'0'.repeat(36)}${i.toString(16).padStart(4, '0')}` : '0x0000000000000000000000000000000000000000',
-          royaltyPercentage: 5,
-          metadata: {
-            name: `${collectionInfo.name} #${i}`,
-            description: `A unique NFT from the ${collectionInfo.name} collection. This piece showcases incredible artistry and creativity.`,
-            image: `https://picsum.photos/400/400?random=${i}`,
-            attributes: [
-              { trait_type: 'Rarity', value: ['Common', 'Rare', 'Epic', 'Legendary'][i % 4] },
-              { trait_type: 'Style', value: ['Photography', 'Digital Art', 'Abstract', 'Portrait', 'Landscape'][i % 5] },
-              { trait_type: 'Color Palette', value: ['Vibrant', 'Monochrome', 'Pastel', 'Dark', 'Neon'][i % 5] },
-              { trait_type: 'Generation', value: '1', display_type: 'number' }
-            ],
-            external_url: 'https://your-website.com'
+  }
+
+  // Charger tous les NFTs de manière simple
+  useEffect(() => {
+    const loadAllNFTs = async () => {
+      if (!totalSupply || Number(totalSupply) === 0) {
+        setAllNFTs([])
+        return
+      }
+
+      console.log('Loading NFTs, total supply:', Number(totalSupply))
+      setLoadingMetadata(true)
+
+      try {
+        const nfts: NFTWithMetadata[] = []
+        
+        // Pour chaque token de 1 à totalSupply
+        for (let i = 1; i <= Number(totalSupply); i++) {
+          try {
+            console.log('Loading token', i)
+            
+            // Appeler directement les fonctions du contrat pour ce token
+            const ownerResponse = await fetch('http://localhost:8545', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_call',
+                params: [{
+                  to: contractAddress,
+                  data: `0x6352211e${i.toString(16).padStart(64, '0')}` // ownerOf(uint256)
+                }, 'latest'],
+                id: 1
+              })
+            })
+            
+            const ownerData = await ownerResponse.json()
+            if (ownerData.error) {
+              console.log(`Token ${i} does not exist or error:`, ownerData.error)
+              continue
+            }
+            
+            // Récupérer le tokenURI
+            const uriResponse = await fetch('http://localhost:8545', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_call',
+                params: [{
+                  to: contractAddress,
+                  data: `0xc87b56dd${i.toString(16).padStart(64, '0')}` // tokenURI(uint256)
+                }, 'latest'],
+                id: 2
+              })
+            })
+            
+            const uriData = await uriResponse.json()
+            if (uriData.error) {
+              console.log(`Could not get URI for token ${i}:`, uriData.error)
+              continue
+            }
+
+            // Décoder les résultats hex
+            const owner = '0x' + ownerData.result.slice(-40)
+            
+            // Décoder l'URI depuis la réponse hex
+            let tokenURI = ''
+            try {
+              if (uriData.result && uriData.result !== '0x') {
+                const hexString = uriData.result.slice(2) // enlever 0x
+                
+                // Décoder la string ABI-encoded
+                // Format: offset(32 bytes) + length(32 bytes) + data
+                const lengthHex = hexString.slice(64, 128) // 2ème chunk = length
+                const length = parseInt(lengthHex, 16)
+                
+                if (length > 0) {
+                  const dataHex = hexString.slice(128, 128 + (length * 2)) // data chunk
+                  tokenURI = Buffer.from(dataHex, 'hex').toString('utf8')
+                  
+                  // Nettoyer l'URI
+                  tokenURI = tokenURI.replace(/\0/g, '').replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim()
+                  
+                  console.log('Raw decoded URI for token', i, ':', tokenURI)
+                  
+                  // Corriger les URIs malformés
+                  if (tokenURI.includes('ipfs://') && !tokenURI.startsWith('ipfs://')) {
+                    // Extraire juste la partie ipfs://
+                    const ipfsMatch = tokenURI.match(/ipfs:\/\/[a-zA-Z0-9]+/)
+                    if (ipfsMatch) {
+                      tokenURI = ipfsMatch[0]
+                    }
+                  }
+                  
+                  console.log('Cleaned URI for token', i, ':', tokenURI)
+                } else {
+                  tokenURI = `ipfs://placeholder-${i}`
+                }
+              } else {
+                tokenURI = `ipfs://placeholder-${i}`
+              }
+            } catch (e) {
+              console.error('Error decoding URI for token', i, ':', e)
+              tokenURI = `ipfs://placeholder-${i}`
+            }
+
+            const nft: NFTWithMetadata = {
+              tokenId: i,
+              owner: owner,
+              tokenURI: tokenURI,
+              royaltyRecipient: owner, // Simplification
+              royaltyPercentage: 5, // Simplification
+            }
+
+            // Essayer de récupérer les métadonnées si on a un URI IPFS valide
+            if (tokenURI.startsWith('ipfs://')) {
+              const metadata = await fetchMetadata(tokenURI)
+              if (metadata) {
+                nft.metadata = metadata
+              } else {
+                // Métadonnées par défaut
+                nft.metadata = {
+                  name: `Token #${i}`,
+                  description: `NFT Token #${i} from the collection`,
+                  image: tokenURI.startsWith('ipfs://') ? tokenURI : 'https://via.placeholder.com/400x400?text=NFT',
+                  attributes: []
+                }
+              }
+            } else {
+              // Métadonnées par défaut si pas d'URI IPFS
+              nft.metadata = {
+                name: `Token #${i}`,
+                description: `NFT Token #${i} from the collection`,
+                image: 'https://via.placeholder.com/400x400?text=NFT',
+                attributes: []
+              }
+            }
+
+            nfts.push(nft)
+            console.log('Added NFT:', nft)
+            
+          } catch (error) {
+            console.error(`Error loading token ${i}:`, error)
           }
-        })
+        }
+
+        console.log('Loaded NFTs:', nfts)
+        setAllNFTs(nfts)
+        
+      } catch (error) {
+        console.error('Error loading NFTs:', error)
+      } finally {
+        setLoadingMetadata(false)
       }
     }
-    
-    return nfts
-  }, [collectionInfo, userNFTs])
+
+    loadAllNFTs()
+  }, [totalSupply, contractAddress])
 
   // Filtrage et tri des NFTs
   const filteredAndSortedNFTs = useMemo(() => {
-    let filtered = mockNFTs
+    let filtered = allNFTs
 
     // Filtre par propriété
     if (showOnlyOwned && address) {
@@ -171,12 +359,12 @@ export function NFTGrid({
     })
 
     return filtered
-  }, [mockNFTs, searchTerm, selectedRarity, sortBy, showOnlyOwned, address])
+  }, [allNFTs, searchTerm, selectedRarity, sortBy, showOnlyOwned, address])
 
   // Extraire les raretés uniques pour les filtres
   const availableRarities = useMemo(() => {
     const rarities = new Set<string>()
-    mockNFTs.forEach(nft => {
+    allNFTs.forEach(nft => {
       nft.metadata?.attributes?.forEach(attr => {
         if (attr.trait_type === 'Rarity') {
           rarities.add(attr.value)
@@ -184,10 +372,12 @@ export function NFTGrid({
       })
     })
     return Array.from(rarities).sort()
-  }, [mockNFTs])
+  }, [allNFTs])
 
   const handleRefresh = useCallback(() => {
     refetchCollection()
+    // Re-trigger l'effet pour recharger les NFTs
+    setAllNFTs([])
   }, [refetchCollection])
 
   if (isLoadingCollection) {
@@ -196,6 +386,11 @@ export function NFTGrid({
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Debug info */}
+      <div className="text-sm text-muted-foreground">
+        Debug: Total Supply: {totalSupply?.toString()}, Loaded NFTs: {allNFTs.length}, Loading: {loadingMetadata.toString()}
+      </div>
+
       {/* En-tête avec statistiques */}
       {collectionStats && (
         <div className="rounded-lg border bg-card p-6">
@@ -229,7 +424,7 @@ export function NFTGrid({
                 <div className="text-sm text-muted-foreground">Floor Price</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{mockNFTs.length > 0 ? new Set(mockNFTs.map(n => n.owner)).size : 0}</div>
+                <div className="text-2xl font-bold">{allNFTs.length > 0 ? new Set(allNFTs.map(n => n.owner)).size : 0}</div>
                 <div className="text-sm text-muted-foreground flex items-center justify-center">
                   <Users className="h-4 w-4 mr-1" />
                   Owners
@@ -334,6 +529,7 @@ export function NFTGrid({
         <p className="text-sm text-muted-foreground">
           {filteredAndSortedNFTs.length} NFT{filteredAndSortedNFTs.length !== 1 ? 's' : ''} found
           {showOnlyOwned && address && ' (owned by you)'}
+          {loadingMetadata && ' (Loading metadata...)'}
         </p>
         
         {searchTerm && (
@@ -348,7 +544,13 @@ export function NFTGrid({
       </div>
 
       {/* Grille des NFTs */}
-      {filteredAndSortedNFTs.length === 0 ? (
+      {loadingMetadata ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array.from({ length: Number(totalSupply) || 4 }).map((_, i) => (
+            <NFTCardSkeleton key={`loading-${i}`} />
+          ))}
+        </div>
+      ) : filteredAndSortedNFTs.length === 0 ? (
         <div className="text-center py-12">
           <div className="mx-auto h-24 w-24 rounded-full bg-muted flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
@@ -359,7 +561,7 @@ export function NFTGrid({
               ? 'Try adjusting your filters or search terms'
               : showOnlyOwned 
                 ? "You don't own any NFTs from this collection yet"
-                : 'No NFTs have been minted yet'
+                : 'Loading NFTs or none minted yet...'
             }
           </p>
           {showOnlyOwned && (
@@ -391,15 +593,6 @@ export function NFTGrid({
               onClick={() => onNFTClick?.(nft.tokenId)}
               className={viewMode === 'list' ? 'max-w-none' : ''}
             />
-          ))}
-        </div>
-      )}
-
-      {/* Loading state pour plus de NFTs */}
-      {isLoadingUserNFTs && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <NFTCardSkeleton key={`loading-${i}`} />
           ))}
         </div>
       )}

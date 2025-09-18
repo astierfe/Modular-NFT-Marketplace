@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { Header } from '@/components/layout/Header'
 import { NFTGrid } from '@/components/nft/NFTGrid'
@@ -18,7 +18,7 @@ import {
   ArrowRight,
   ExternalLink
 } from 'lucide-react'
-import { useCollectionInfo, useIsOwner } from '@/hooks/useModularNFT'
+import { useCollectionInfo, useIsOwner, useAdminFunctions, usePublicMint, useOwnerMint } from '@/hooks/useModularNFT'
 
 export default function Home() {
   const { address, isConnected } = useAccount()
@@ -186,142 +186,313 @@ export default function Home() {
     </div>
   )
 
-  // Section Mint
-  const MintSection = () => (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-4">Mint Your NFT</h2>
-          <p className="text-muted-foreground">
-            Create your unique digital collectible on the Ethereum blockchain.
-          </p>
-        </div>
+  // Section Mint CORRIGÉE avec les onClick
+  const MintSection = () => {
+    // États locaux pour les formulaires
+    const [publicTokenURI, setPublicTokenURI] = useState('')
+    const [ownerRecipient, setOwnerRecipient] = useState(address || '')
+    const [ownerTokenURI, setOwnerTokenURI] = useState('')
+    
+    // Hooks de minting
+    const { 
+      mint: publicMint, 
+      isPending: isPublicMintPending, 
+      isConfirming: isPublicMintConfirming,
+      isConfirmed: isPublicMintConfirmed,
+      error: publicMintError 
+    } = usePublicMint()
+    
+    const { 
+      mint: ownerMint, 
+      isPending: isOwnerMintPending,
+      isConfirming: isOwnerMintConfirming, 
+      isConfirmed: isOwnerMintConfirmed,
+      error: ownerMintError 
+    } = useOwnerMint()
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Zap className="mr-2 h-5 w-5 text-yellow-500" />
-              Minting Interface
-            </CardTitle>
-            <CardDescription>
-              {collectionInfo?.mintingActive 
-                ? `Minting is currently active. Price: ${collectionInfo.mintPrice} ETH`
-                : 'Minting is currently disabled by the collection owner.'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {collectionInfo?.mintingActive ? (
-              <>
-                {/* Public Mint Interface */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div>
-                      <h4 className="font-semibold">Public Mint</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Mint with your own metadata
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{collectionInfo.mintPrice} ETH</div>
-                      <div className="text-sm text-muted-foreground">
-                        {collectionInfo.maxSupply - collectionInfo.totalSupply} remaining
-                      </div>
-                    </div>
-                  </div>
+    // Handlers pour les boutons
+    const handlePublicMint = () => {
+      if (!publicTokenURI) {
+        alert('Please enter a token URI')
+        return
+      }
+      if (!collectionInfo?.mintPrice) {
+        alert('Mint price not available')
+        return
+      }
+      publicMint(publicTokenURI, collectionInfo.mintPrice)
+    }
 
+    const handleOwnerMint = () => {
+      if (!ownerRecipient) {
+        alert('Please enter a recipient address')
+        return
+      }
+      if (!ownerTokenURI) {
+        alert('Please enter a token URI')
+        return
+      }
+      ownerMint(ownerRecipient as `0x${string}`, ownerTokenURI)
+    }
+
+    // Auto-reset après confirmation
+    useEffect(() => {
+      if (isPublicMintConfirmed) {
+        setPublicTokenURI('')
+      }
+    }, [isPublicMintConfirmed])
+
+    useEffect(() => {
+      if (isOwnerMintConfirmed) {
+        setOwnerRecipient(address || '')
+        setOwnerTokenURI('')
+      }
+    }, [isOwnerMintConfirmed, address])
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-4">Mint Your NFT</h2>
+            <p className="text-muted-foreground">
+              Create your unique digital collectible on the Ethereum blockchain.
+            </p>
+          </div>
+
+          {/* Messages d'état */}
+          {(isPublicMintConfirmed || isOwnerMintConfirmed) && (
+            <div className="mb-6 p-4 bg-green-100 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-green-800 dark:text-green-200">
+                ✅ NFT minted successfully!
+              </p>
+            </div>
+          )}
+
+          {(publicMintError || ownerMintError) && (
+            <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-800">
+              <p className="text-red-800 dark:text-red-200">
+                ❌ Error: {(publicMintError || ownerMintError)?.message}
+              </p>
+            </div>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Zap className="mr-2 h-5 w-5 text-yellow-500" />
+                Minting Interface
+              </CardTitle>
+              <CardDescription>
+                {collectionInfo?.mintingActive 
+                  ? `Minting is currently active. Price: ${collectionInfo.mintPrice} ETH`
+                  : 'Minting is currently disabled by the collection owner.'
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {collectionInfo?.mintingActive ? (
+                <>
+                  {/* Public Mint Interface */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Token URI (IPFS)</label>
-                      <input
-                        type="text"
-                        placeholder="ipfs://QmYourMetadataHash..."
-                        className="w-full p-3 border rounded-md bg-background"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Enter the IPFS hash of your NFT metadata JSON file
-                      </p>
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">Public Mint</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Mint with your own metadata
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">{collectionInfo.mintPrice} ETH</div>
+                        <div className="text-sm text-muted-foreground">
+                          {collectionInfo.maxSupply - collectionInfo.totalSupply} remaining
+                        </div>
+                      </div>
                     </div>
 
-                    <Button 
-                      size="lg" 
-                      className="w-full"
-                      disabled={!collectionInfo.mintingActive}
-                    >
-                      Mint NFT for {collectionInfo.mintPrice} ETH
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Owner Mint Interface (si owner) */}
-                {isOwner && (
-                  <div className="border-t pt-6">
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                        <div>
-                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                            Owner Mint (Free)
-                          </h4>
-                          <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                            As the contract owner, you can mint for free
-                          </p>
-                        </div>
-                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                          Owner Only
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium">Recipient Address</label>
-                          <input
-                            type="text"
-                            placeholder={address || "0x..."}
-                            className="w-full p-3 border rounded-md bg-background"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium">Token URI</label>
-                          <input
-                            type="text"
-                            placeholder="ipfs://QmHash..."
-                            className="w-full p-3 border rounded-md bg-background"
-                          />
-                        </div>
+                      <div>
+                        <label className="text-sm font-medium">Token URI (IPFS)</label>
+                        <input
+                          type="text"
+                          placeholder="ipfs://QmYourMetadataHash..."
+                          value={publicTokenURI}
+                          onChange={(e) => setPublicTokenURI(e.target.value)}
+                          className="w-full p-3 border rounded-md bg-background"
+                          disabled={isPublicMintPending || isPublicMintConfirming}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Enter the IPFS hash of your NFT metadata JSON file
+                        </p>
                       </div>
 
                       <Button 
                         size="lg" 
-                        variant="secondary"
                         className="w-full"
+                        onClick={handlePublicMint}
+                        disabled={
+                          !collectionInfo.mintingActive || 
+                          !publicTokenURI || 
+                          isPublicMintPending || 
+                          isPublicMintConfirming
+                        }
                       >
-                        Owner Mint (Free)
+                        {isPublicMintPending 
+                          ? 'Preparing Transaction...' 
+                          : isPublicMintConfirming 
+                            ? 'Confirming...' 
+                            : `Mint NFT for ${collectionInfo.mintPrice} ETH`
+                        }
                       </Button>
                     </div>
                   </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
-                  <Zap className="h-8 w-8 text-red-600 dark:text-red-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Minting Disabled</h3>
-                <p className="text-muted-foreground">
-                  The collection owner has disabled public minting. 
-                  {isOwner && ' You can enable it in the Admin Panel.'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
 
-  // Section Admin (owner only)
+                  {/* Owner Mint Interface (si owner) */}
+                  {isOwner && (
+                    <div className="border-t pt-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div>
+                            <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                              Owner Mint (Free)
+                            </h4>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                              As the contract owner, you can mint for free
+                            </p>
+                          </div>
+                          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            Owner Only
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium">Recipient Address</label>
+                            <input
+                              type="text"
+                              placeholder={address || "0x..."}
+                              value={ownerRecipient}
+                              onChange={(e) => setOwnerRecipient(e.target.value)}
+                              className="w-full p-3 border rounded-md bg-background"
+                              disabled={isOwnerMintPending || isOwnerMintConfirming}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Token URI</label>
+                            <input
+                              type="text"
+                              placeholder="ipfs://QmHash..."
+                              value={ownerTokenURI}
+                              onChange={(e) => setOwnerTokenURI(e.target.value)}
+                              className="w-full p-3 border rounded-md bg-background"
+                              disabled={isOwnerMintPending || isOwnerMintConfirming}
+                            />
+                          </div>
+                        </div>
+
+                        <Button 
+                          size="lg" 
+                          variant="secondary"
+                          className="w-full"
+                          onClick={handleOwnerMint}
+                          disabled={
+                            !ownerRecipient || 
+                            !ownerTokenURI || 
+                            isOwnerMintPending || 
+                            isOwnerMintConfirming
+                          }
+                        >
+                          {isOwnerMintPending 
+                            ? 'Preparing Transaction...' 
+                            : isOwnerMintConfirming 
+                              ? 'Confirming...' 
+                              : 'Owner Mint (Free)'
+                          }
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                    <Zap className="h-8 w-8 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Minting Disabled</h3>
+                  <p className="text-muted-foreground">
+                    The collection owner has disabled public minting. 
+                    {isOwner && ' You can enable it in the Admin Panel.'}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Section Admin complète avec hooks connectés
   const AdminSection = () => {
     if (!isOwner) return null
+
+    // Import des hooks admin
+    const { 
+      setMintingActive, 
+      setMintPrice, 
+      setMaxSupply, 
+      setDefaultRoyalty,
+      withdraw,
+      isPending, 
+      isConfirming, 
+      isConfirmed,
+      error 
+    } = useAdminFunctions()
+
+    // États locaux pour les formulaires
+    const [newMintPrice, setNewMintPrice] = useState('')
+    const [newMaxSupply, setNewMaxSupply] = useState('')
+    const [newRoyaltyPercentage, setNewRoyaltyPercentage] = useState('')
+    const [newRoyaltyRecipient, setNewRoyaltyRecipient] = useState('')
+
+    // Handler pour le toggle minting
+    const handleToggleMinting = () => {
+      if (collectionInfo) {
+        setMintingActive(!collectionInfo.mintingActive)
+      }
+    }
+
+    // Handler pour mettre à jour le prix
+    const handleUpdatePrice = () => {
+      if (newMintPrice) {
+        setMintPrice(newMintPrice)
+        setNewMintPrice('')
+      }
+    }
+
+    // Handler pour mettre à jour max supply
+    const handleUpdateMaxSupply = () => {
+      if (newMaxSupply) {
+        setMaxSupply(parseInt(newMaxSupply))
+        setNewMaxSupply('')
+      }
+    }
+
+    // Handler pour mettre à jour royalties
+    const handleUpdateRoyalty = () => {
+      if (newRoyaltyRecipient && newRoyaltyPercentage && address) {
+        setDefaultRoyalty(
+          newRoyaltyRecipient as `0x${string}`, 
+          parseFloat(newRoyaltyPercentage)
+        )
+        setNewRoyaltyPercentage('')
+        setNewRoyaltyRecipient('')
+      }
+    }
+
+    // Handler pour withdraw
+    const handleWithdraw = () => {
+      withdraw()
+    }
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -332,6 +503,33 @@ export default function Home() {
               Manage your NFT collection settings and configuration.
             </p>
           </div>
+
+          {/* Messages d'état */}
+          {isPending && (
+            <div className="mb-6 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-blue-800 dark:text-blue-200">Transaction en cours...</p>
+            </div>
+          )}
+
+          {isConfirming && (
+            <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-yellow-800 dark:text-yellow-200">Attente de confirmation...</p>
+            </div>
+          )}
+
+          {isConfirmed && (
+            <div className="mb-6 p-4 bg-green-100 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-green-800 dark:text-green-200">Transaction confirmée !</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-800">
+              <p className="text-red-800 dark:text-red-200">
+                Erreur : {error.message || 'Transaction échouée'}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Collection Settings */}
@@ -349,10 +547,18 @@ export default function Home() {
                     <input
                       type="number"
                       step="0.001"
+                      value={newMintPrice}
+                      onChange={(e) => setNewMintPrice(e.target.value)}
                       placeholder={collectionInfo?.mintPrice}
                       className="flex-1 p-3 border rounded-md bg-background"
                     />
-                    <Button variant="outline">Update</Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleUpdatePrice}
+                      disabled={isPending || !newMintPrice}
+                    >
+                      Update
+                    </Button>
                   </div>
                 </div>
 
@@ -361,10 +567,18 @@ export default function Home() {
                   <div className="flex space-x-2">
                     <input
                       type="number"
+                      value={newMaxSupply}
+                      onChange={(e) => setNewMaxSupply(e.target.value)}
                       placeholder={collectionInfo?.maxSupply.toString()}
                       className="flex-1 p-3 border rounded-md bg-background"
                     />
-                    <Button variant="outline">Reduce</Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleUpdateMaxSupply}
+                      disabled={isPending || !newMaxSupply}
+                    >
+                      Reduce
+                    </Button>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Can only be reduced, not increased
@@ -381,8 +595,15 @@ export default function Home() {
                   <Button 
                     variant={collectionInfo?.mintingActive ? "destructive" : "default"}
                     size="sm"
+                    onClick={handleToggleMinting}
+                    disabled={isPending}
                   >
-                    {collectionInfo?.mintingActive ? 'Disable' : 'Enable'}
+                    {isPending 
+                      ? 'Processing...' 
+                      : collectionInfo?.mintingActive 
+                        ? 'Disable' 
+                        : 'Enable'
+                    }
                   </Button>
                 </div>
               </CardContent>
@@ -405,10 +626,18 @@ export default function Home() {
                       min="0"
                       max="10"
                       step="0.1"
+                      value={newRoyaltyPercentage}
+                      onChange={(e) => setNewRoyaltyPercentage(e.target.value)}
                       placeholder="5.0"
                       className="flex-1 p-3 border rounded-md bg-background"
                     />
-                    <Button variant="outline">Update</Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleUpdateRoyalty}
+                      disabled={isPending || !newRoyaltyPercentage || !newRoyaltyRecipient}
+                    >
+                      Update
+                    </Button>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Maximum 10% royalty allowed
@@ -420,10 +649,11 @@ export default function Home() {
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      placeholder={address}
+                      value={newRoyaltyRecipient}
+                      onChange={(e) => setNewRoyaltyRecipient(e.target.value)}
+                      placeholder={address || "0x..."}
                       className="flex-1 p-3 border rounded-md bg-background"
                     />
-                    <Button variant="outline">Update</Button>
                   </div>
                 </div>
               </CardContent>
@@ -448,12 +678,17 @@ export default function Home() {
                   </p>
                 </div>
 
-                <Button variant="outline" className="w-full">
-                  Withdraw Funds
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleWithdraw}
+                  disabled={isPending}
+                >
+                  {isPending ? 'Processing...' : 'Withdraw Funds'}
                 </Button>
 
                 <div className="text-center">
-                  <Button variant="destructive" size="sm">
+                  <Button variant="destructive" size="sm" disabled>
                     Emergency Withdraw
                   </Button>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -479,13 +714,16 @@ export default function Home() {
                       type="text"
                       placeholder={collectionInfo?.baseURI}
                       className="flex-1 p-3 border rounded-md bg-background"
+                      disabled
                     />
-                    <Button variant="outline">Update</Button>
+                    <Button variant="outline" disabled>
+                      Update
+                    </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" disabled>
                     Test IPFS Gateway
                   </Button>
                   <div className="text-sm text-muted-foreground text-center">
