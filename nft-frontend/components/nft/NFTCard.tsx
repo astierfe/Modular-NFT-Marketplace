@@ -1,4 +1,4 @@
-// components/nft/NFTCard.tsx
+// ./nft-frontend/components/nft/NFTCard.tsx
 'use client'
 
 import { useState } from 'react'

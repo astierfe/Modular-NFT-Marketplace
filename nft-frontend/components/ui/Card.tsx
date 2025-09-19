@@ -1,4 +1,4 @@
-// components/ui/Card.tsx
+// ./nft-frontend/components/ui/Card.tsx
 import * as React from "react"
 import { cn } from "@/lib/utils"
 

@@ -1,4 +1,4 @@
-// components/ui/Skeleton.tsx
+// ./nft-frontend/components/ui/Skeleton.tsx
 import { cn } from "@/lib/utils"
 
 function Skeleton({

@@ -1,0 +1,89 @@
+@startuml
+!theme plain
+title Flux de chargement des NFTs après connexion wallet
+
+actor User
+participant "ConnectButton\n(RainbowKit)" as Connect
+participant "page.tsx" as Page
+participant "NFTGrid.tsx" as Grid
+participant "useCollectionInfo" as CollectionHook
+participant "useModularNFT" as NFTHook
+participant "wagmi/viem" as Wagmi
+participant "Anvil RPC\n(localhost:8545)" as RPC
+participant "ModularNFT.sol" as Contract
+participant "IPFS Gateway" as IPFS
+participant "NFTCard.tsx" as Card
+
+== Phase 1: Connexion Wallet ==
+User -> Connect: Click "Connect Wallet"
+Connect -> Connect: Open wallet selector
+Connect -> Wagmi: Request wallet connection
+Wagmi -> RPC: Connect to Anvil (chainId: 31337)
+RPC --> Wagmi: Connection established
+Wagmi --> Page: address, isConnected = true
+Page -> Page: Switch from Hero to NavigationTabs
+
+== Phase 2: Initialisation Collection ==
+Page -> Grid: Mount NFTGrid component
+Grid -> CollectionHook: useCollectionInfo()
+CollectionHook -> Wagmi: useReadContract(getCollectionInfo)
+Wagmi -> RPC: eth_call to contract
+RPC -> Contract: getCollectionInfo()
+Contract --> RPC: CollectionInfo struct
+RPC --> Wagmi: Encoded response
+Wagmi --> CollectionHook: Decoded data
+CollectionHook --> Grid: collectionInfo object
+
+Grid -> NFTHook: useReadContract(totalSupply)
+NFTHook -> Wagmi: totalSupply() call
+Wagmi -> RPC: eth_call
+RPC -> Contract: totalSupply()
+Contract --> RPC: uint256 supply
+RPC --> Wagmi: totalSupply value
+Wagmi --> Grid: totalSupply = 3 (example)
+
+== Phase 3: Récupération des tokens individuels ==
+Grid -> Grid: Start loadAllNFTs() for each token (1 to totalSupply)
+
+loop For each tokenId (1 to totalSupply)
+    Grid -> RPC: Direct RPC call ownerOf(tokenId)
+    RPC -> Contract: ownerOf(tokenId)
+    Contract --> RPC: owner address
+    RPC --> Grid: owner address
+    
+    Grid -> RPC: Direct RPC call tokenURI(tokenId)  
+    RPC -> Contract: tokenURI(tokenId)
+    Contract --> RPC: IPFS URI string
+    RPC --> Grid: tokenURI (ipfs://QmHash...)
+    
+    Grid -> Grid: Clean and validate tokenURI
+    Grid -> IPFS: fetch(https://ipfs.io/ipfs/QmHash...)
+    IPFS --> Grid: metadata.json
+    Grid -> Grid: Parse metadata (name, image, attributes)
+    Grid -> Grid: Add NFT to allNFTs array
+end
+
+== Phase 4: Affichage des NFTs ==
+Grid -> Grid: Filter and sort NFTs
+Grid -> Card: Map over filteredNFTs
+Card -> Card: Render NFT with metadata
+Card -> IPFS: Load image from metadata.image
+IPFS --> Card: Display image
+Card --> Grid: Rendered NFT cards
+Grid --> Page: Complete NFT collection display
+Page --> User: Show collection with real NFTs
+
+== Phase 5: Interactions utilisateur ==
+User -> Card: Click on NFT
+Card -> Page: onNFTClick(tokenId)
+Page -> Page: Open NFT details (future)
+
+alt User is owner
+    User -> Page: Switch to Admin Panel
+    Page -> NFTHook: useIsOwner()
+    NFTHook -> Wagmi: owner() contract call
+    Wagmi -> Contract: owner()
+    Contract --> Page: Show admin functions
+end
+
+@enduml

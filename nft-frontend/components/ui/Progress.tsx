@@ -1,4 +1,4 @@
-// components/ui/Progress.tsx
+// ./nft-frontend/components/ui/Progress.tsx
 import * as React from "react"
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { cn } from "@/lib/utils"

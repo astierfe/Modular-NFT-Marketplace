@@ -1,16 +1,17 @@
-// components/layout/Header.tsx
+// ./nft-frontend/components/layout/Header.tsx
 'use client'
 
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { useCollectionInfo, useIsOwner } from '@/hooks/useModularNFT'
+import { useCollectionInfo, useIsOwner } from '@/hooks'
 import { useState } from 'react'
 import { Menu, X, Settings, Palette, ExternalLink } from 'lucide-react'
+import { useCurrentUserIsOwner } from '@/hooks'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { address, isConnected } = useAccount()
-  const { isOwner } = useIsOwner()
+  const isOwner = useCurrentUserIsOwner()
   const { collectionInfo } = useCollectionInfo()
   const chainId = useChainId()
 

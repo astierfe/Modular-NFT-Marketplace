@@ -1,0 +1,170 @@
+@startuml
+!theme mars
+title Logique métier - Processus de chargement des NFTs
+
+|User|
+start
+:User visits page;
+:Click "Connect Wallet";
+
+|RainbowKit|
+:Display wallet selector;
+:Request wallet connection;
+
+if (Wallet connected?) then (yes)
+    |page.tsx|
+    :Set isConnected = true;
+    :Hide Hero section;
+    :Show NavigationTabs;
+    :Mount NFTGrid component;
+else (no)
+    :Show connection error;
+    stop
+endif
+
+|NFTGrid.tsx|
+:Initialize component state;
+:Call useCollectionInfo();
+
+|useCollectionInfo Hook|
+:Execute useReadContract(getCollectionInfo);
+if (Contract call success?) then (yes)
+    :Return collectionInfo data;
+else (no)
+    :Set error state;
+    |NFTGrid.tsx|
+    :Show error message;
+    stop
+endif
+
+|NFTGrid.tsx|
+:Call useReadContract(totalSupply);
+if (totalSupply > 0?) then (yes)
+    :Set loadingMetadata = true;
+    :Initialize empty allNFTs array;
+else (no)
+    :Show "No NFTs minted yet";
+    stop
+endif
+
+:Start loadAllNFTs() function;
+
+|Loop for each tokenId|
+partition "For i = 1 to totalSupply" {
+    :Make RPC call ownerOf(i);
+    
+    if (Token exists?) then (yes)
+        :Get owner address;
+        :Make RPC call tokenURI(i);
+        
+        if (TokenURI valid?) then (yes)
+            :Clean and validate URI;
+            if (URI starts with ipfs://?) then (yes)
+                :Convert to HTTP gateway URL;
+                :Fetch metadata from IPFS;
+                
+                if (Metadata fetch success?) then (yes)
+                    :Parse JSON metadata;
+                    :Extract name, image, attributes;
+                else (no)
+                    :Use default metadata;
+                endif
+            else (no)
+                :Use placeholder metadata;
+            endif
+            
+            :Create NFT object with metadata;
+            :Add to allNFTs array;
+        else (no)
+            :Skip this token;
+        endif
+    else (no)
+        :Token doesn't exist, continue;
+    endif
+}
+
+:Set loadingMetadata = false;
+:Update allNFTs state;
+
+|Filtering & Display|
+if (User has filters active?) then (yes)
+    :Apply search term filter;
+    :Apply rarity filter;
+    :Apply ownership filter;
+else (no)
+    :Use all NFTs;
+endif
+
+:Sort NFTs by selected criteria;
+
+if (filteredNFTs.length > 0?) then (yes)
+    |NFTCard rendering|
+    partition "For each filtered NFT" {
+        :Create NFTCard component;
+        :Load image from IPFS;
+        if (Image load success?) then (yes)
+            :Display NFT with image;
+        else (no)
+            :Show placeholder image;
+        endif
+        :Display metadata (name, attributes);
+        :Show owner information;
+        :Add interaction handlers;
+    }
+    :Display complete grid;
+else (no)
+    :Show "No NFTs found" message;
+    if (User has filters?) then (yes)
+        :Show "Try adjusting filters";
+        :Provide clear filters button;
+    else (no)
+        :Show "Collection empty";
+    endif
+endif
+
+|User Interactions|
+:User can interact with NFTs;
+
+if (User clicks NFT?) then (yes)
+    :Call onNFTClick(tokenId);
+    :Open NFT details (future);
+else
+    :Continue browsing;
+endif
+
+if (User applies filters?) then (yes)
+    :Update filter state;
+    :Re-run filtering logic;
+    :Update display;
+else
+    :Maintain current view;
+endif
+
+if (User refreshes?) then (yes)
+    :Call refetchCollection();
+    :Reset allNFTs array;
+    :Restart loading process;
+else
+    :Keep current data;
+endif
+
+stop
+
+note right
+  **Points clés:**
+  - Gestion des erreurs à chaque étape
+  - Cache des données via React Query
+  - États de chargement pour UX fluide
+  - Fallbacks pour métadonnées manquantes
+  - Optimisation avec pagination future
+end note
+
+note left  
+  **Performance:**
+  - Limite: ~10k NFTs (ERC721Enumerable)
+  - RPC calls directs pour bypass hooks
+  - Lazy loading images IPFS
+  - Debounced search/filters
+end note
+
+@enduml

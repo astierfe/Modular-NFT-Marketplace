@@ -1,0 +1,117 @@
+@startuml
+!theme mars
+title Architecture des composants et hooks - Chargement NFT
+
+package "Web3 Infrastructure" {
+    [RainbowKitProvider] as Rainbow
+    [WagmiProvider] as Wagmi
+    [QueryClientProvider] as Query
+    
+    Wagmi --> Rainbow
+    Query --> Wagmi
+}
+
+package "Contract Layer" {
+    [ModularNFT.sol] as Contract
+    [ABI Definition] as ABI
+    [Contract Addresses] as Addresses
+    
+    interface "ERC721 + EIP2981" as IERC721
+    Contract .up.|> IERC721
+    ABI --> Contract : describes
+    Addresses --> Contract : locates
+}
+
+package "Custom Hooks Layer" {
+    [useCollectionInfo] as CollectionHook
+    [useUserNFTs] as UserHook  
+    [useTokenInfo] as TokenHook
+    [useIsOwner] as OwnerHook
+    [useCollectionStats] as StatsHook
+    
+    CollectionHook --> Wagmi : useReadContract
+    UserHook --> Wagmi : useReadContract  
+    TokenHook --> Wagmi : useReadContract
+    OwnerHook --> Wagmi : useReadContract
+    StatsHook --> CollectionHook : depends on
+    
+    CollectionHook --> ABI : uses
+    UserHook --> ABI : uses
+    TokenHook --> ABI : uses
+    OwnerHook --> ABI : uses
+    
+    CollectionHook --> Addresses : targets
+    UserHook --> Addresses : targets
+    TokenHook --> Addresses : targets
+    OwnerHook --> Addresses : targets
+}
+
+package "Component Layer" {
+    [page.tsx] as MainPage
+    [Header.tsx] as Header  
+    [NFTGrid.tsx] as Grid
+    [NFTCard.tsx] as Card
+    [Button.tsx] as Button
+    [Input.tsx] as Input
+    
+    MainPage --> Header : contains
+    MainPage --> Grid : contains
+    Grid --> Card : renders multiple
+    Grid --> Button : uses
+    Grid --> Input : uses
+    
+    Header --> CollectionHook : data from
+    Grid --> CollectionHook : data from
+    Grid --> UserHook : data from
+    Grid --> StatsHook : data from
+    Card --> TokenHook : data from (individual)
+    MainPage --> OwnerHook : admin check
+}
+
+package "External Services" {
+    [IPFS Gateway] as IPFS
+    [Anvil RPC] as RPC
+    
+    Grid --> IPFS : fetch metadata
+    Card --> IPFS : load images
+    Wagmi --> RPC : blockchain calls
+    RPC --> Contract : executes
+}
+
+package "State Management" {
+    [React State] as State
+    [wagmi Cache] as Cache
+    [React Query] as RQuery
+    
+    Grid --> State : local state
+    Card --> State : local state
+    CollectionHook --> Cache : cached reads
+    UserHook --> Cache : cached reads
+    Cache --> RQuery : persistence
+}
+
+' Relations de données
+Grid --> Grid : loadAllNFTs()\nfilterAndSort()
+Grid --> RPC : Direct RPC calls\n(ownerOf, tokenURI)
+Card --> Card : IPFSImage component\nmetadata parsing
+
+' Flow indicators
+note right of Grid
+  **Flux principal:**
+  1. Mount → useCollectionInfo()
+  2. Read totalSupply
+  3. Loop 1→totalSupply
+  4. Direct RPC calls
+  5. Fetch IPFS metadata
+  6. Render NFTCards
+end note
+
+note right of CollectionHook
+  **Hook responsibilities:**
+  - Contract state reading
+  - Data caching
+  - Error handling  
+  - Loading states
+end note
+
+@enduml
