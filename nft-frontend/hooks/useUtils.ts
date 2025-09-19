@@ -1,7 +1,7 @@
-// ./nft-frontend/hooks/useUtils.ts - Hooks utilitaires
+// ./nft-frontend/hooks/useUtils.ts - Hooks utilitaires avec DEBUG
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { useCollectionInfo } from '../hooks/useCollectionData'
 import { useUserNFTs } from '../hooks/useUserNFTs'
@@ -51,12 +51,30 @@ export function useGlobalRefresh() {
   }
 }
 
-// Hook pour vérifier si l'utilisateur connecté est owner
+// Hook pour vérifier si l'utilisateur connecté est owner - AVEC DEBUG
 export function useCurrentUserIsOwner() {
   const { address } = useAccount()
-  const { isOwner } = useIsOwner()
+  const { isOwner, contractOwner } = useIsOwner()
   
-  return useMemo(() => {
-    return address ? isOwner(address) : false
-  }, [address, isOwner])
+  const result = useMemo(() => {
+    const isUserOwner = address ? isOwner(address) : false
+    
+    // DEBUG - Log détaillé
+    console.log('useCurrentUserIsOwner Debug:', {
+      userAddress: address,
+      contractOwner,
+      isUserOwner,
+      addressesMatch: address && contractOwner ? 
+        address.toLowerCase() === contractOwner.toLowerCase() : false
+    })
+    
+    return isUserOwner
+  }, [address, isOwner, contractOwner])
+
+  // DEBUG - Log à chaque changement
+  useEffect(() => {
+    console.log('useCurrentUserIsOwner: Owner status changed:', result)
+  }, [result])
+  
+  return result
 }

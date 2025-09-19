@@ -1,0 +1,11 @@
+{
+  "chainId": 11155111,
+  "contractAddress": "0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312",
+  "collectionName": "Modular NFT Collection - Sepolia",
+  "collectionSymbol": "MNFT-SEP",
+  "maxSupply": 1000,
+  "mintPrice": "10000000000000000",
+  "baseURI": "https://gateway.pinata.cloud/ipfs/",
+  "owner": "0xf350B91b403ced3c6E68d34C13eBdaaE3bbd4E01",
+  "deployedAt": 1758288108
+}

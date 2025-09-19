@@ -24,7 +24,8 @@ export default function Home() {
   const isOwner = useCurrentUserIsOwner()
   const { collectionInfo } = useCollectionInfo()
   
-  // Navigation state
+  // Navigation state - DEBUG
+  console.log('Page.tsx: isOwner value passed to navigation:', isOwner)
   const navigation = usePageNavigation(isOwner)
   
   // Fix hydration

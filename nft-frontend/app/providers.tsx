@@ -6,8 +6,9 @@ import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { foundry, sepolia, mainnet } from 'wagmi/chains'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ThemeProvider } from 'next-themes'
+import { useState, useEffect } from 'react'
 
-// Configuration wagmi v2 (nouvelle syntaxe)
+// Configuration wagmi v2 (CORRIGÉE - remplace l'ancienne syntaxe)
 const wagmiConfig = getDefaultConfig({
   appName: 'NFT Collection Viewer',
   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'demo-project-id',
@@ -15,7 +16,7 @@ const wagmiConfig = getDefaultConfig({
   transports: {
     [foundry.id]: http(process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://localhost:8545'),
     [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
-//    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
+    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
   },
 })
 
@@ -24,7 +25,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000, // 1 minute
-      gcTime: 10 * 60 * 1000, // 10 minutes (ancien cacheTime)
+      gcTime: 10 * 60 * 1000, // 10 minutes (remplace cacheTime dans v5)
     },
   },
 })
@@ -33,7 +34,18 @@ interface ProvidersProps {
   children: React.ReactNode
 }
 
-export function Providers({ children }: ProvidersProps) {
+// Composant pour gérer l'hydratation du ThemeProvider
+function ThemeProviderFixed({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <>{children}</>
+  }
+
   return (
     <ThemeProvider
       attribute="class"
@@ -41,13 +53,23 @@ export function Providers({ children }: ProvidersProps) {
       enableSystem
       disableTransitionOnChange
     >
+      {children}
+    </ThemeProvider>
+  )
+}
+
+export function Providers({ children }: ProvidersProps) {
+  return (
+    <ThemeProviderFixed>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider>
+          <RainbowKitProvider
+            initialChain={sepolia}
+          >
             {children}
           </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
-    </ThemeProvider>
+    </ThemeProviderFixed>
   )
 }

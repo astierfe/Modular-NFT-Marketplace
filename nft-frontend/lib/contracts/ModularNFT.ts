@@ -1,4 +1,4 @@
-// lib/contracts/ModularNFT.ts
+// ./nft-frontend/lib/contracts/ModularNFT.ts
 export const MODULAR_NFT_ABI = [
   // ERC721 Standard Functions
   {
@@ -415,7 +415,7 @@ export const CONTRACT_ADDRESSES = {
   31337: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`, // Compte Anvil de test #0
   
   // Sepolia Testnet
-  11155111: '0x' as `0x${string}`, // À remplir après déploiement
+  11155111: '0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312' as `0x${string}`, // À remplir après déploiement
   
   // Ethereum Mainnet
   1: '0x' as `0x${string}`, // À remplir après déploiement

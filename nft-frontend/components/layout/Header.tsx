@@ -1,10 +1,10 @@
-// ./nft-frontend/components/layout/Header.tsx
+// ./nft-frontend/components/layout/Header.tsx - FIX HYDRATATION
 'use client'
 
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
 import { useCollectionInfo, useIsOwner } from '@/hooks'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu, X, Settings, Palette, ExternalLink } from 'lucide-react'
 import { useCurrentUserIsOwner } from '@/hooks'
 
@@ -14,6 +14,12 @@ export function Header() {
   const isOwner = useCurrentUserIsOwner()
   const { collectionInfo } = useCollectionInfo()
   const chainId = useChainId()
+
+  // FIX HYDRATATION - État mounted
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const getNetworkInfo = (chainId: number) => {
     switch (chainId) {
@@ -29,6 +35,17 @@ export function Header() {
   }
 
   const networkInfo = getNetworkInfo(chainId)
+
+  // DEBUG - Log pour vérifier isOwner
+  useEffect(() => {
+    console.log('Header Debug:', {
+      address,
+      isConnected,
+      isOwner,
+      chainId,
+      mounted
+    })
+  }, [address, isConnected, isOwner, chainId, mounted])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,7 +69,7 @@ export function Header() {
             </div>
 
             {/* Collection Stats */}
-            {collectionInfo && (
+            {collectionInfo && mounted && (
               <div className="hidden md:flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
                   <span className="font-medium">{collectionInfo.totalSupply}</span>
@@ -75,119 +92,125 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="#collection" className="text-sm font-medium transition-colors hover:text-primary">
-              Collection
-            </a>
-            <a href="#mint" className="text-sm font-medium transition-colors hover:text-primary">
-              Mint
-            </a>
-            {isOwner && (
-              <a href="#admin" className="text-sm font-medium transition-colors hover:text-primary flex items-center space-x-1">
-                <Settings className="h-4 w-4" />
-                <span>Admin</span>
+          {mounted && (
+            <nav className="hidden md:flex items-center space-x-6">
+              <a href="#collection" className="text-sm font-medium transition-colors hover:text-primary">
+                Collection
               </a>
-            )}
-            {networkInfo.explorer && (
-              <a 
-                href={networkInfo.explorer}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium transition-colors hover:text-primary flex items-center space-x-1"
-              >
-                <ExternalLink className="h-4 w-4" />
-                <span>Explorer</span>
+              <a href="#mint" className="text-sm font-medium transition-colors hover:text-primary">
+                Mint
               </a>
-            )}
-          </nav>
+              {isOwner && (
+                <a href="#admin" className="text-sm font-medium transition-colors hover:text-primary flex items-center space-x-1">
+                  <Settings className="h-4 w-4" />
+                  <span>Admin</span>
+                </a>
+              )}
+              {networkInfo.explorer && (
+                <a 
+                  href={networkInfo.explorer}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center space-x-1"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Explorer</span>
+                </a>
+              )}
+            </nav>
+          )}
 
           {/* Network & Wallet */}
           <div className="flex items-center space-x-4">
             {/* Network Indicator */}
-            <div className="hidden sm:flex items-center space-x-2 rounded-md border px-3 py-1.5 text-sm">
-              <div className={`h-2 w-2 rounded-full ${networkInfo.color}`} />
-              <span>{networkInfo.name}</span>
-            </div>
+            {mounted && (
+              <div className="hidden sm:flex items-center space-x-2 rounded-md border px-3 py-1.5 text-sm">
+                <div className={`h-2 w-2 rounded-full ${networkInfo.color}`} />
+                <span>{networkInfo.name}</span>
+              </div>
+            )}
 
             {/* Wallet Connection */}
-            <ConnectButton.Custom>
-              {({
-                account,
-                chain,
-                openAccountModal,
-                openChainModal,
-                openConnectModal,
-                mounted,
-              }) => {
-                const ready = mounted
-                const connected = ready && account && chain
+            {mounted && (
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openAccountModal,
+                  openChainModal,
+                  openConnectModal,
+                  mounted: rainbowMounted,
+                }) => {
+                  const ready = rainbowMounted
+                  const connected = ready && account && chain
 
-                return (
-                  <div
-                    {...(!ready && {
-                      'aria-hidden': true,
-                      style: {
-                        opacity: 0,
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                      },
-                    })}
-                  >
-                    {(() => {
-                      if (!connected) {
+                  return (
+                    <div
+                      {...(!ready && {
+                        'aria-hidden': true,
+                        style: {
+                          opacity: 0,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        },
+                      })}
+                    >
+                      {(() => {
+                        if (!connected) {
+                          return (
+                            <button
+                              onClick={openConnectModal}
+                              type="button"
+                              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            >
+                              Connect Wallet
+                            </button>
+                          )
+                        }
+
+                        if (chain.unsupported) {
+                          return (
+                            <button
+                              onClick={openChainModal}
+                              type="button"
+                              className="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
+                            >
+                              Wrong network
+                            </button>
+                          )
+                        }
+
                         return (
-                          <button
-                            onClick={openConnectModal}
-                            type="button"
-                            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                          >
-                            Connect Wallet
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={openAccountModal}
+                              type="button"
+                              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500" />
+                                <span className="hidden sm:block">
+                                  {account.displayName}
+                                </span>
+                                <span className="sm:hidden">
+                                  {account.address?.slice(0, 6)}...
+                                </span>
+                              </div>
+                            </button>
+                            {isOwner && (
+                              <div className="flex items-center space-x-1 rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                <Settings className="h-3 w-3" />
+                                <span className="hidden sm:block">Owner</span>
+                              </div>
+                            )}
+                          </div>
                         )
-                      }
-
-                      if (chain.unsupported) {
-                        return (
-                          <button
-                            onClick={openChainModal}
-                            type="button"
-                            className="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
-                          >
-                            Wrong network
-                          </button>
-                        )
-                      }
-
-                      return (
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={openAccountModal}
-                            type="button"
-                            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <div className="h-2 w-2 rounded-full bg-green-500" />
-                              <span className="hidden sm:block">
-                                {account.displayName}
-                              </span>
-                              <span className="sm:hidden">
-                                {account.address?.slice(0, 6)}...
-                              </span>
-                            </div>
-                          </button>
-                          {isOwner && (
-                            <div className="flex items-center space-x-1 rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                              <Settings className="h-3 w-3" />
-                              <span className="hidden sm:block">Owner</span>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })()}
-                  </div>
-                )
-              }}
-            </ConnectButton.Custom>
+                      })()}
+                    </div>
+                  )
+                }}
+              </ConnectButton.Custom>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -206,7 +229,7 @@ export function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
+        {mobileMenuOpen && mounted && (
           <div className="md:hidden">
             <div className="space-y-1 pb-3 pt-2">
               {/* Collection Stats Mobile */}
