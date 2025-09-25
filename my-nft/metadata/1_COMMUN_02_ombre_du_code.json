@@ -1,0 +1,45 @@
+{
+  "name": "The Shadow of Code #2",
+  "description": "A common NFT from the personal collection, created to demonstrate the Modular NFT Marketplace.",
+  "image": "ipfs://bafybeiel5apc3piquu3i3fdpsyyl3vr7y3dw6vkexrvqbqtj65nrn2r4cy",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Background",
+      "value": "Green Terminal"
+    },
+    {
+      "trait_type": "Doodle",
+      "value": "Infinite Loop"
+    },
+    {
+      "trait_type": "Language",
+      "value": "Python"
+    },
+    {
+      "trait_type": "Alchemy Bonus",
+      "value": "Apprentice"
+    },
+    {
+      "trait_type": "Category",
+      "value": "Digital Art"
+    },
+    {
+      "trait_type": "Resolution",
+      "value": "1024x1024"
+    },
+    {
+      "trait_type": "Format",
+      "value": "PNG"
+    },
+    {
+      "trait_type": "Collection",
+      "value": "Crypto Code Doodles"
+    }
+  ],
+  "external_url": "https://github.com/astierfe/Modular-NFT-Marketplace",
+  "background_color": "000000"
+}

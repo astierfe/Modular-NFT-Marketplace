@@ -1,4 +1,4 @@
-// ./nft-frontend/lib/utils/metadataUtils.ts - Utilitaires pour métadonnées et IPFS
+// ./nft-frontend/lib/utils/metadataUtils.ts - VERSION COMPLÈTE CORRIGÉE
 import { type Address } from 'viem'
 
 export interface NFTMetadata {
@@ -120,13 +120,53 @@ export const metadataUtils = {
     }
   },
 
-  // Faire un appel RPC vers le contrat
+  // ✨ NOUVEAU : Décoder royaltyInfo response
+  decodeRoyaltyInfo: (hexResponse: string): { recipient: string, percentage: number } => {
+    try {
+      if (!hexResponse || hexResponse === '0x') {
+        return { recipient: '0x0000000000000000000000000000000000000000', percentage: 0 }
+      }
+
+      const hexString = hexResponse.slice(2)
+      
+      // Format de retour: (address, uint256)
+      // address = 32 bytes (20 bytes address padded à gauche)
+      // uint256 = 32 bytes
+      
+      const recipientHex = hexString.slice(24, 64) // Extraire l'address (skip padding)
+      const amountHex = hexString.slice(64, 128)    // Extraire le montant
+      
+      const recipient = '0x' + recipientHex
+      const amount = parseInt(amountHex, 16)
+      
+      // Convertir amount (sur 10000) en pourcentage
+      // Si royaltyInfo(tokenId, 10000) retourne 250, c'est 2.5%
+      const percentage = amount / 100
+      
+      return { recipient, percentage }
+    } catch (error) {
+      console.error('Error decoding royalty info:', error)
+      return { recipient: '0x0000000000000000000000000000000000000000', percentage: 0 }
+    }
+  },
+
+  // Faire un appel RPC vers le contrat (version améliorée)
   contractCall: async (
     rpcUrl: string,
     contractAddress: Address,
     functionSignature: string,
-    tokenId: number
+    ...params: (number | string)[]
   ): Promise<string> => {
+    // Encoder les paramètres
+    let data = functionSignature
+    for (const param of params) {
+      if (typeof param === 'number') {
+        data += param.toString(16).padStart(64, '0')
+      } else if (typeof param === 'string') {
+        data += param.replace('0x', '').padStart(64, '0')
+      }
+    }
+    
     const response = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,21 +175,50 @@ export const metadataUtils = {
         method: 'eth_call',
         params: [{
           to: contractAddress,
-          data: functionSignature + tokenId.toString(16).padStart(64, '0')
+          data
         }, 'latest'],
         id: 1
       })
     })
     
-    const data = await response.json()
-    if (data.error) {
-      throw new Error(data.error.message || 'Contract call failed')
+    const result = await response.json()
+    if (result.error) {
+      throw new Error(result.error.message || 'Contract call failed')
     }
     
-    return data.result
+    return result.result
   },
 
-  // Charger les informations d'un token spécifique
+  // ✨ NOUVEAU : Récupérer les vraies royalties depuis le contrat
+  getRoyaltyInfo: async (
+    rpcUrl: string,
+    contractAddress: Address,
+    tokenId: number
+  ): Promise<{ recipient: string, percentage: number }> => {
+    try {
+      console.log(`Fetching royalty info for token ${tokenId}`)
+      
+      // royaltyInfo(uint256 tokenId, uint256 salePrice) returns (address, uint256)
+      // On utilise 10000 comme salePrice pour avoir les basis points directement
+      const result = await metadataUtils.contractCall(
+        rpcUrl,
+        contractAddress,
+        '0x2a55205a', // royaltyInfo(uint256,uint256)
+        tokenId,
+        10000
+      )
+      
+      const royaltyInfo = metadataUtils.decodeRoyaltyInfo(result)
+      console.log(`Royalty info for token ${tokenId}:`, royaltyInfo)
+      
+      return royaltyInfo
+    } catch (error) {
+      console.error(`Error fetching royalty info for token ${tokenId}:`, error)
+      return { recipient: '0x0000000000000000000000000000000000000000', percentage: 0 }
+    }
+  },
+
+  // Charger les informations d'un token spécifique (VERSION CORRIGÉE)
   loadTokenInfo: async (
     rpcUrl: string,
     contractAddress: Address,
@@ -190,12 +259,15 @@ export const metadataUtils = {
         tokenURI = `ipfs://placeholder-${tokenId}`
       }
 
+      // ✨ CORRECTION: Récupérer les VRAIES royalties depuis le contrat
+      const royaltyInfo = await metadataUtils.getRoyaltyInfo(rpcUrl, contractAddress, tokenId)
+
       const nft: NFTWithMetadata = {
         tokenId,
         owner,
         tokenURI,
-        royaltyRecipient: owner, // Simplification
-        royaltyPercentage: 5, // Simplification
+        royaltyRecipient: royaltyInfo.recipient, // ✅ Vraie valeur du contrat
+        royaltyPercentage: royaltyInfo.percentage, // ✅ Vraie valeur du contrat
       }
 
       // Charger métadonnées IPFS

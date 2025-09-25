@@ -1,0 +1,45 @@
+{
+  "name": "The Forgotten Proof #1",
+  "description": "An epic NFT from the personal collection, created to demonstrate the Modular NFT Marketplace.",
+  "image": "ipfs://bafybeied5b3j3wt6w4xjs5q5hrcm4iv6z67gxkofhwt55zcbow3jwnta6q",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Epic"
+    },
+    {
+      "trait_type": "Background",
+      "value": "Code Galaxy"
+    },
+    {
+      "trait_type": "Doodle",
+      "value": "Infinite Loop"
+    },
+    {
+      "trait_type": "Language",
+      "value": "Solidity"
+    },
+    {
+      "trait_type": "Alchemy Bonus",
+      "value": "Gas Master"
+    },
+    {
+      "trait_type": "Category",
+      "value": "Digital Art"
+    },
+    {
+      "trait_type": "Resolution",
+      "value": "1024x1024"
+    },
+    {
+      "trait_type": "Format",
+      "value": "PNG"
+    },
+    {
+      "trait_type": "Collection",
+      "value": "Crypto Code Doodles"
+    }
+  ],
+  "external_url": "https://github.com/astierfe/Modular-NFT-Marketplace",
+  "background_color": "000000"
+}

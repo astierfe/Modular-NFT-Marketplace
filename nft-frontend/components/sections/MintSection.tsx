@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/Badge'
 import { Zap } from 'lucide-react'
 import { useMintingInterface } from '@/hooks/useMintingInterface'
+import { SelectImage } from '@/components/sections/SelectImage'
+
 
 interface MintSectionProps {
   isOwner: boolean
@@ -24,6 +26,7 @@ export function MintSection({ isOwner, className = "" }: MintSectionProps) {
     handleOwnerMint,
   } = useMintingInterface(isOwner)
 
+ 
   return (
     <div className={`container mx-auto px-4 py-8 ${className}`}>
       <div className="max-w-2xl mx-auto">
@@ -50,6 +53,15 @@ export function MintSection({ isOwner, className = "" }: MintSectionProps) {
             </p>
           </div>
         )}
+
+        {/* Section de sélection d'image */}
+        <SelectImage 
+          onImageSelect={(metadataCID) => {
+            console.log('✅ Image sélectionnée, CID:', metadataCID)
+            setPublicTokenURI(`ipfs://${metadataCID}`)
+            setOwnerTokenURI(`ipfs://${metadataCID}`)
+          }}
+        />
 
         <Card>
           <CardHeader>

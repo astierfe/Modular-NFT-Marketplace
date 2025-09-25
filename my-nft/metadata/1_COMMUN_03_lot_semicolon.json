@@ -1,0 +1,45 @@
+{
+  "name": "The Lost Semicolon #3",
+  "description": "A common NFT from the personal collection, created to demonstrate the Modular NFT Marketplace.",
+  "image": "ipfs://bafybeih6qywwv67fzdliffozw2lkhfklfnc7pfubldd2fnzmkyk5ndwsgy",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Background",
+      "value": "Green Terminal"
+    },
+    {
+      "trait_type": "Doodle",
+      "value": "Console.log"
+    },
+    {
+      "trait_type": "Language",
+      "value": "Python"
+    },
+    {
+      "trait_type": "Alchemy Bonus",
+      "value": "Apprentice"
+    },
+    {
+      "trait_type": "Category",
+      "value": "Digital Art"
+    },
+    {
+      "trait_type": "Resolution",
+      "value": "1024x1024"
+    },
+    {
+      "trait_type": "Format",
+      "value": "PNG"
+    },
+    {
+      "trait_type": "Collection",
+      "value": "Crypto Code Doodles"
+    }
+  ],
+  "external_url": "https://github.com/astierfe/Modular-NFT-Marketplace",
+  "background_color": "000000"
+}

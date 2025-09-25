@@ -1,0 +1,154 @@
+@startuml Marketplace_NFT_Architecture
+
+!theme mars
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Marketplace NFT - Architecture Système\n
+
+' ===== ACTEURS =====
+actor "Créateur NFT" as Creator #LightBlue
+actor "Trader/Acheteur" as Trader #LightGreen
+actor "Vendeur NFT" as Seller #Orange
+
+' ===== FRONTEND APPLICATIONS =====
+package "Frontend Applications" {
+component "Creator DApp\n(Existant)" as CreatorApp #E1F5FE {
+note top : Next.js + Web3\nCréation & Mint NFT
+}
+ 
+component "Marketplace DApp\n(Nouveau)" as MarketplaceApp #E8F5E8 {
+note top : Next.js + Wagmi\nTrading Interface
+}
+}
+
+' ===== BLOCKCHAIN LAYER =====
+package "Blockchain Layer (Ethereum)" {
+    component "ModularNFT Contract\n(Existant)" as ModularNFT #FFE0B2 {
+        note bottom : ERC721 + EIP-2981\nMint & Royalties
+    }
+    
+    component "Marketplace Contract\n(Nouveau)" as MarketplaceContract #C8E6C9 {
+        note bottom : Listing & Trading\nCommissions & Transfers
+    }
+}
+
+' ===== STORAGE LAYER =====
+package "Storage & Metadata" {
+    database "IPFS Network" as IPFS #F3E5F5 {
+        note top : Métadonnées JSON\nImages NFT
+    }
+    
+    database "Blockchain Storage" as BlockchainDB #E3F2FD {
+        note top : Listings\nOwnership\nTransactions
+    }
+}
+
+' ===== WALLET LAYER =====
+package "Web3 Infrastructure" {
+    component "Wallet Provider\n(MetaMask, etc.)" as Wallet #FFF3E0
+    component "RPC Provider\n(Infura, Alchemy)" as RPC #EFEBE9
+}
+
+' ===== RELATIONS CRÉATEUR =====
+Creator --> CreatorApp : Utilise
+CreatorApp --> ModularNFT : mint()\nsetApprovalForAll()
+CreatorApp --> IPFS : Upload métadonnées
+ModularNFT --> IPFS : tokenURI()
+
+' ===== RELATIONS MARKETPLACE =====
+Seller --> MarketplaceApp : Liste NFT
+Trader --> MarketplaceApp : Achète NFT
+
+MarketplaceApp --> MarketplaceContract : listItem()\nbuyItem()
+MarketplaceApp --> ModularNFT : ownerOf()\ntokenURI()\nisApprovedForAll()
+MarketplaceApp --> IPFS : Lecture métadonnées
+
+' ===== RELATIONS SMART CONTRACTS =====
+MarketplaceContract --> ModularNFT : transferFrom()\nroyaltyInfo()
+MarketplaceContract --> BlockchainDB : Store listings
+ModularNFT --> BlockchainDB : Store ownership
+
+' ===== RELATIONS WEB3 =====
+CreatorApp --> Wallet : Connexion
+MarketplaceApp --> Wallet : Connexion
+Wallet --> RPC : Transactions
+RPC --> "Blockchain Layer" : Submit TX
+
+' #######################################################
+' ===== FLUX PRINCIPAUX (CORRIGÉS) =====
+'   Remplacement de "note over A, B" par des notes libres et des liens '..'
+' #######################################################
+
+' Flux de création (existant)
+note " **FLUX CRÉATION (Existant)**\n1. Créateur uploade métadonnées → IPFS\n2. Créateur mint NFT → ModularNFT\n3. NFT avec tokenURI pointe vers IPFS" as NoteCreation #FFE0B2
+Creator .. NoteCreation
+IPFS .. NoteCreation
+ModularNFT .. NoteCreation
+
+
+' Flux de listing
+note " **FLUX LISTING**\n1. Seller approuve Marketplace → ModularNFT\n2. Seller crée listing → MarketplaceContract\n3. Listing stocké → Blockchain" as NoteListing #FFF9C4
+Seller .. NoteListing
+ModularNFT .. NoteListing
+MarketplaceContract .. NoteListing
+BlockchainDB .. NoteListing
+
+
+' Flux d'achat
+note " **FLUX ACHAT**\n1. Trader paie → MarketplaceContract\n2. Calcul commissions (marketplace + royalties)\n3. Transfer NFT → ModularNFT.transferFrom()\n4. Distribution ETH → Seller/Creator/Marketplace" as NoteAchat #E8F5E8
+Trader .. NoteAchat
+MarketplaceContract .. NoteAchat
+ModularNFT .. NoteAchat
+
+
+' ===== ANNOTATIONS TECHNIQUES =====
+note right of MarketplaceContract #FFCDD2
+    **Fonctions Clés**
+    • listItem(tokenId, price)
+    • buyItem(tokenId) payable
+    • delistItem(tokenId)
+    • withdrawProceeds()
+    
+    **Sécurité**
+    • ReentrancyGuard
+    • Access Control
+    • Price Validation
+end note
+
+note right of ModularNFT #E1F5FE
+    **Interface Lecture**
+    • ownerOf(tokenId)
+    • isApprovedForAll()
+    • tokenURI(tokenId)
+    • royaltyInfo(tokenId, price)
+    
+    **Pas de modification**
+    Contrat existant inchangé
+end note
+
+note left of MarketplaceApp #E8F5E8
+    **Composants Clés**
+    • MarketplaceGrid
+    • NFTCard
+    • ListingModal
+    • BuyModal
+    
+    **Hooks Web3**
+    • useMarketplace()
+    • useListings()
+    • useNFTData()
+end note
+
+' ===== LÉGENDE =====
+legend bottom
+    |= Couleur |= Composant |
+    | <#FFE0B2> | Existant (ModularNFT) |
+    | <#C8E6C9> | Nouveau (Marketplace) |
+    | <#E8F5E8> | Frontend Marketplace |
+    | <#E1F5FE> | Creator DApp |
+    | <#F3E5F5> | Storage/IPFS |
+end legend
+
+@enduml

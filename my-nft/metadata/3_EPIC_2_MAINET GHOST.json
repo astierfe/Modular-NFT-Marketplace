@@ -1,0 +1,45 @@
+{
+  "name": "The Mainnet Ghost #2",
+  "description": "An epic NFT from the personal collection, created to demonstrate the Modular NFT Marketplace.",
+  "image": "ipfs://bafybeifykjrheygrk4dgxsrjshbtvkkl5rywaxqkl62w4wlmoe6xrsraha",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Epic"
+    },
+    {
+      "trait_type": "Background",
+      "value": "Code Galaxy"
+    },
+    {
+      "trait_type": "Doodle",
+      "value": "Error 404"
+    },
+    {
+      "trait_type": "Language",
+      "value": "Solidity"
+    },
+    {
+      "trait_type": "Alchemy Bonus",
+      "value": "Gas Master"
+    },
+    {
+      "trait_type": "Category",
+      "value": "Digital Art"
+    },
+    {
+      "trait_type": "Resolution",
+      "value": "1024x1024"
+    },
+    {
+      "trait_type": "Format",
+      "value": "PNG"
+    },
+    {
+      "trait_type": "Collection",
+      "value": "Crypto Code Doodles"
+    }
+  ],
+  "external_url": "https://github.com/astierfe/Modular-NFT-Marketplace",
+  "background_color": "000000"
+}
