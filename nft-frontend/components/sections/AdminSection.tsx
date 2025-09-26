@@ -112,15 +112,19 @@ export function AdminSection({ className = "" }: AdminSectionProps) {
               <div>
                 <label className="text-sm font-medium">Mint Price (ETH)</label>
                 <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={formState.newMintPrice}
-                    onChange={(e) => setNewMintPrice(e.target.value)}
-                    placeholder={collectionInfo?.mintPrice}
-                    className="flex-1 p-3 border rounded-md bg-background"
-                    disabled={status.isProcessing}
-                  />
+                  
+                  
+<input
+  type="number"
+  step="0.001"
+  value={formState.newMintPrice || collectionInfo?.mintPrice || ''}
+  onChange={(e) => setNewMintPrice(e.target.value)}
+  placeholder="0.01"
+  className="flex-1 p-3 border rounded-md bg-background"
+  disabled={status.isProcessing}
+/>
+
+
                   <Button 
                     variant="outline" 
                     onClick={handleUpdatePrice}
@@ -134,25 +138,19 @@ export function AdminSection({ className = "" }: AdminSectionProps) {
               <div>
                 <label className="text-sm font-medium">Max Supply</label>
                 <div className="flex space-x-2">
+                  
+                  
                   <input
                     type="number"
-                    value={formState.newMaxSupply}
-                    onChange={(e) => setNewMaxSupply(e.target.value)}
-                    placeholder={collectionInfo?.maxSupply.toString()}
-                    className="flex-1 p-3 border rounded-md bg-background"
-                    disabled={status.isProcessing}
+                    value={collectionInfo?.maxSupply || ''}
+                    readOnly
+                    className="flex-1 p-3 border rounded-md bg-muted text-muted-foreground cursor-not-allowed"
                   />
-                  <Button 
-                    variant="outline"
-                    onClick={handleUpdateMaxSupply}
-                    disabled={!validation.canUpdateMaxSupply}
-                  >
-                    Reduce
-                  </Button>
+
+
+                  
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Can only be reduced, not increased
-                </p>
+
               </div>
 
               <div className="flex items-center justify-between">
@@ -182,32 +180,31 @@ export function AdminSection({ className = "" }: AdminSectionProps) {
           {/* Royalties Settings - DEFAULT */}
           <Card>
             <CardHeader>
-              <CardTitle>Default Royalties</CardTitle>
+              <CardTitle>Royalties Settings</CardTitle>
               <CardDescription>
                 Configure default royalty payments for all new NFTs
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  ℹ️ Current default: <strong>5%</strong> (set at deployment)
-                </p>
-              </div>
+
 
               <div>
                 <label className="text-sm font-medium">Default Royalty (%)</label>
                 <div className="flex space-x-2">
+
                   <input
                     type="number"
                     min="0"
                     max="10"
                     step="0.1"
-                    value={formState.newRoyaltyPercentage}
+                    value={formState.newRoyaltyPercentage || '5'}
                     onChange={(e) => setNewRoyaltyPercentage(e.target.value)}
-                    placeholder="2.5"
+                    placeholder="5.0"
                     className="flex-1 p-3 border rounded-md bg-background"
                     disabled={status.isProcessing}
                   />
+
+                  
                   <Button 
                     variant="outline"
                     onClick={handleUpdateRoyalty}
