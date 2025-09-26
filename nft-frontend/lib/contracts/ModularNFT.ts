@@ -225,6 +225,17 @@ export const MODULAR_NFT_ABI = [
     "type": "function"
   },
 
+  {
+    "inputs": [],
+    "name": "getDefaultRoyalty", 
+    "outputs": [
+      {"name": "recipient", "type": "address"},
+      {"name": "percentage", "type": "uint96"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+
   // Minting Functions
   {
     "inputs": [

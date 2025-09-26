@@ -1,4 +1,3 @@
-// ./nft-frontend/hooks/useCollectionData.ts - Hook pour données collection
 'use client'
 
 import { useReadContract, useChainId } from 'wagmi'
@@ -7,7 +6,6 @@ import { useCallback, useMemo } from 'react'
 import { MODULAR_NFT_ABI, getContractAddress } from '@/lib/contracts/ModularNFT'
 import { type CollectionInfo, type CollectionStats } from '../lib/types/contractTypes'
 
-// Hook principal pour les informations de collection
 export function useCollectionInfo() {
   const chainId = useChainId()
   const contractAddress = getContractAddress(chainId as keyof typeof import('@/lib/contracts/ModularNFT').CONTRACT_ADDRESSES)
@@ -17,15 +15,25 @@ export function useCollectionInfo() {
     abi: MODULAR_NFT_ABI,
     functionName: 'getCollectionInfo',
     query: {
-      refetchInterval: 10000, // 10 secondes
+      refetchInterval: 10000,
       staleTime: 5000,
     }
   })
 
-  const collectionInfo = useMemo((): CollectionInfo | null => {
+  const { data: defaultRoyalty, refetch: refetchRoyalty } = useReadContract({
+    address: contractAddress,
+    abi: MODULAR_NFT_ABI,
+    functionName: 'getDefaultRoyalty',
+    query: {
+      refetchInterval: 15000,
+      staleTime: 10000,
+    }
+  })
+
+  const collectionInfo = useMemo((): (CollectionInfo & { defaultRoyalty?: { recipient: string; percentage: number } }) | null => {
     if (!data) return null
     
-    return {
+    const baseInfo: CollectionInfo = {
       name: data.name,
       symbol: data.symbol,
       totalSupply: Number(data.totalSupply),
@@ -36,19 +44,31 @@ export function useCollectionInfo() {
       baseURI: data.baseURI,
       progress: Number(data.totalSupply) / Number(data.maxSupply) * 100
     }
-  }, [data])
+
+    if (defaultRoyalty) {
+      return {
+        ...baseInfo,
+        defaultRoyalty: {
+          recipient: defaultRoyalty[0],
+          percentage: Number(defaultRoyalty[1]) / 100
+        }
+      }
+    }
+
+    return baseInfo
+  }, [data, defaultRoyalty])
 
   const enhancedRefetch = useCallback(async () => {
     console.log('useCollectionInfo: Refetching collection data...')
     try {
-      const result = await refetch()
+      const results = await Promise.all([refetch(), refetchRoyalty()])
       console.log('useCollectionInfo: Refetch completed')
-      return result
+      return results
     } catch (error) {
       console.error('useCollectionInfo: Refetch failed', error)
       throw error
     }
-  }, [refetch])
+  }, [refetch, refetchRoyalty])
 
   return {
     collectionInfo,
@@ -58,7 +78,6 @@ export function useCollectionInfo() {
   }
 }
 
-// Hook pour les statistiques dérivées
 export function useCollectionStats() {
   const { collectionInfo, refetch } = useCollectionInfo()
   
@@ -85,7 +104,6 @@ export function useCollectionStats() {
   }
 }
 
-// Hook pour surveillance du total supply
 export function useTotalSupplyWatcher() {
   const chainId = useChainId()
   const contractAddress = getContractAddress(chainId as keyof typeof import('@/lib/contracts/ModularNFT').CONTRACT_ADDRESSES)
@@ -106,7 +124,6 @@ export function useTotalSupplyWatcher() {
   }
 }
 
-// Hook pour vérifier propriété
 export function useIsOwner() {
   const chainId = useChainId()
   const contractAddress = getContractAddress(chainId as keyof typeof import('@/lib/contracts/ModularNFT').CONTRACT_ADDRESSES)
@@ -116,7 +133,7 @@ export function useIsOwner() {
     abi: MODULAR_NFT_ABI,
     functionName: 'owner',
     query: {
-      refetchInterval: 60000, // 1 minute
+      refetchInterval: 60000,
     }
   })
 

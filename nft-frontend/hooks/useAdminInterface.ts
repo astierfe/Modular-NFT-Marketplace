@@ -127,16 +127,18 @@ export function useAdminInterface() {
     }, [formState.newMaxSupply, setMaxSupply]),
 
     handleUpdateRoyalty: useCallback(() => {
-      if (formState.newRoyaltyRecipient && formState.newRoyaltyPercentage && address) {
-        const percentage = parseFloat(formState.newRoyaltyPercentage)
-        if (!isNaN(percentage)) {
-          setDefaultRoyalty(
-            formState.newRoyaltyRecipient as `0x${string}`, 
-            percentage
-          )
-        }
+      const percentage = parseFloat(formState.newRoyaltyPercentage || collectionInfo?.defaultRoyalty?.percentage?.toString() || '5')
+      const recipient = formState.newRoyaltyRecipient || collectionInfo?.defaultRoyalty?.recipient || address
+      
+      if (!recipient) {
+        alert('Veuillez saisir une adresse de destinataire pour les royalties')
+        return
       }
-    }, [formState.newRoyaltyRecipient, formState.newRoyaltyPercentage, address, setDefaultRoyalty]),
+      
+      if (!isNaN(percentage) && percentage >= 0 && percentage <= 10) {
+        setDefaultRoyalty(recipient as `0x${string}`, percentage)
+      }
+    }, [formState, collectionInfo, address, setDefaultRoyalty]),
 
     handleWithdraw: useCallback(() => {
       withdraw()
@@ -177,13 +179,25 @@ export function useAdminInterface() {
 
   // Validation helpers
   const validation = {
-    canUpdatePrice: formState.newMintPrice !== '' && !isPending,
-    canUpdateMaxSupply: formState.newMaxSupply !== '' && !isPending,
-    canUpdateRoyalty: formState.newRoyaltyRecipient !== '' && 
-                      formState.newRoyaltyPercentage !== '' && 
-                      !isPending,
+        canUpdatePrice: formState.newMintPrice !== '' && !isPending,
+        canUpdateMaxSupply: formState.newMaxSupply !== '' && !isPending,
+        canUpdateRoyalty: (() => {
+      const percentage = parseFloat(formState.newRoyaltyPercentage || collectionInfo?.defaultRoyalty?.percentage?.toString() || '5')
+      return !isNaN(percentage) && percentage >= 0 && percentage <= 10 && !isPending
+    })()
   }
 
+  useEffect(() => {
+    if (collectionInfo?.defaultRoyalty && !formState.newRoyaltyRecipient) {
+      setFormState(prev => ({
+        ...prev,
+        newRoyaltyRecipient: collectionInfo.defaultRoyalty?.recipient || '',
+        newRoyaltyPercentage: collectionInfo.defaultRoyalty?.percentage?.toString() || ''
+      }))
+    }
+  }, [collectionInfo, formState.newRoyaltyRecipient])
+
+  
   return {
     // State
     formState,
