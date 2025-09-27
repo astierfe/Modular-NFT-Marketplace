@@ -426,7 +426,7 @@ export const CONTRACT_ADDRESSES = {
   31337: '0xd34F288Fa68b657926989EF286477E9f3C87A825' as `0x${string}`, // Compte Anvil de test #0
   
   // Sepolia Testnet
-  11155111: '0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312' as `0x${string}`, // À remplir après déploiement
+  11155111: '0xd34F288Fa68b657926989EF286477E9f3C87A825' as `0x${string}`, // À remplir après déploiement
   
   // Ethereum Mainnet
   1: '0x' as `0x${string}`, // À remplir après déploiement

@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { Menu, X, Settings, Palette, ExternalLink } from 'lucide-react'
 import { useCurrentUserIsOwner } from '@/hooks'
 import Image from 'next/image'
+import { getContractAddress } from '@/lib/contracts/ModularNFT'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -44,7 +45,9 @@ export function Header() {
       isConnected,
       isOwner,
       chainId,
-      mounted
+      mounted,
+    contractAddress: chainId ? getContractAddress(chainId as 1 | 31337 | 11155111) : 'no chainId',
+    collectionInfo: collectionInfo
     })
   }, [address, isConnected, isOwner, chainId, mounted])
 

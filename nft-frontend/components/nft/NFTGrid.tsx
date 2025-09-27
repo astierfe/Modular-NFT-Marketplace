@@ -80,10 +80,7 @@ export function NFTGrid({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Debug info - peut être supprimé en production */}
-      <div className="text-sm text-muted-foreground">
-        Debug: Total Supply: {totalSupply?.toString()}, Loaded NFTs: {allNFTs.length}, Loading: {loadingMetadata.toString()}, Refresh: {refreshKey}
-      </div>
+
 
       {/* En-tête avec statistiques */}
       <CollectionStatsHeader
