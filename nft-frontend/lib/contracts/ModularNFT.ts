@@ -423,7 +423,7 @@ export const MODULAR_NFT_ABI = [
 // Contract addresses by network
 export const CONTRACT_ADDRESSES = {
   // Local Anvil
-  31337: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`, // Compte Anvil de test #0
+  31337: '0xd34F288Fa68b657926989EF286477E9f3C87A825' as `0x${string}`, // Compte Anvil de test #0
   
   // Sepolia Testnet
   11155111: '0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312' as `0x${string}`, // À remplir après déploiement
