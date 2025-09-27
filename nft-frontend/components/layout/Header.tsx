@@ -7,6 +7,7 @@ import { useCollectionInfo, useIsOwner } from '@/hooks'
 import { useState, useEffect } from 'react'
 import { Menu, X, Settings, Palette, ExternalLink } from 'lucide-react'
 import { useCurrentUserIsOwner } from '@/hooks'
+import Image from 'next/image'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -55,9 +56,9 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
-                <Palette className="h-5 w-5 text-white" />
-              </div>
+
+                <Image src="/logo_59_46.png" alt="Logo" width={59} height={46} />
+
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {collectionInfo?.name || 'NFT Collection'}
