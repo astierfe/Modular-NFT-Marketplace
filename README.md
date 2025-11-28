@@ -69,7 +69,7 @@ npm install
 ```bash
 # Local Anvil
 RPC_URL=http://localhost:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+PRIVATE_KEY=YOUR_KEY
 COLLECTION_NAME="Dev NFT Collection"
 COLLECTION_SYMBOL="DEVNFT"
 MAX_SUPPLY=10000
@@ -101,7 +101,7 @@ anvil
 
 **Terminal 2 - Deploy Contract:**
 ```bash
-forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --broadcast
 ```
 
 **Terminal 3 - Start Frontend:**
@@ -277,7 +277,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Links
 
 - **Documentation**: [Technical Architecture](docs/architecture.md)
-- **Frontend Specs**: [Frontend Specifications](docs/frontend-specs.md)
 - **Deployment Guide**: [Deployment Instructions](docs/deployment.md)
 
 ## 📞 Support
