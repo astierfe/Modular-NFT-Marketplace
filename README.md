@@ -1,288 +1,110 @@
-# Modular NFT Marketplace
+# Modular NFT
 
-A complete Web3 NFT collection platform built with modern Ethereum development tools. Features a Solidity smart contract backend and a Next.js frontend with full Web3 integration.
+> Complete Web3 NFT collection platform - ERC-721 smart contracts + Next.js frontend
 
-## 🌟 Features
+[![Deployed](https://img.shields.io/badge/Sepolia-Deployed-success)](https://sepolia.etherscan.io/address/0xd34F288Fa68b657926989EF286477E9f3C87A825)
+[![Contract](https://img.shields.io/badge/Contract-0xd34F288...A825-blue)](docs/deployment/CONTRACT_ADDRESSES.md)
 
-### Smart Contract (ModularNFT.sol)
-- **ERC-721 Standard**: Full NFT implementation with enumerable and URI storage extensions
-- **EIP-2981 Royalties**: Built-in royalty system for secondary sales
-- **Flexible Minting**: Owner and public minting with configurable pricing
-- **Batch Operations**: Efficient batch minting for collections
-- **Access Control**: Owner-only administrative functions
-- **Financial Management**: Secure fund withdrawal mechanisms
-- **Supply Management**: Configurable and reducible max supply
+## System Architecture
 
-### Frontend (Next.js 15)
-- **Modern Web3 Stack**: wagmi v2 + RainbowKit + React Query
-- **Multi-Chain Support**: Anvil (local), Sepolia (testnet), Ethereum Mainnet
-- **Responsive Design**: Tailwind CSS with dark/light mode
-- **Real-time Updates**: Live contract state synchronization
-- **Admin Panel**: Complete contract management interface
-- **IPFS Integration**: Decentralized metadata and image storage
+```mermaid
+graph TB
+    subgraph "Users"
+        Creator[👤 NFT Creator<br/>Mints & Manages]
+        Trader[👤 Trader/Buyer<br/>Browses & Trades]
+        Admin[👔 Contract Owner<br/>Platform Admin]
+    end
 
-## 🏗️ Architecture
+    subgraph "Frontend Layer"
+        DApp[🌐 Modular NFT DApp<br/>Next.js 15 + wagmi v2]
+    end
 
-```
-nft-contracts/                    # Root project
-├── src/
-│   └── Modular-NFT.sol          # Main smart contract
-├── script/
-│   └── Deploy.s.sol             # Deployment scripts
-├── test/
-│   └── TestModularNFT.sol       # Comprehensive test suite
-├── foundry.toml                 # Foundry configuration
-└── nft-frontend/                # Next.js frontend
-    ├── app/                     # App Router structure
-    ├── components/              # React components
-    ├── hooks/                   # Custom Web3 hooks
-    ├── lib/                     # Utilities and configurations
-    └── package.json             # Frontend dependencies
-```
+    subgraph "Blockchain Layer - Ethereum Sepolia"
+        ModularNFT[📜 ModularNFT Contract<br/>0xd34F288...A825<br/>ERC-721 + EIP-2981]
+        ExtMarket[🏪 External Marketplace<br/>0x2AE0898...A8F<br/>Trading Platform]
+    end
 
-## 🚀 Quick Start
+    subgraph "Storage & Services"
+        IPFS[🗂️ IPFS Network<br/>Pinata Gateway<br/>Metadata + Images]
+        RPC[⚡ RPC Provider<br/>Alchemy SDK]
+        Wallet[👛 Web3 Wallets<br/>MetaMask, Rainbow, etc.]
+    end
 
-### Prerequisites
-- Node.js 18+
-- Foundry
-- Git
+    Creator -->|Creates & Uploads Assets| IPFS
+    Creator -->|Mints NFTs| DApp
+    Trader -->|Browses Collection| DApp
+    Trader -->|Trades NFTs| ExtMarket
+    Admin -->|Manages Contract| DApp
 
-### 1. Clone Repository
-```bash
-git clone <repository-url>
-cd nft-contracts
-```
+    DApp -->|Wallet Connection| Wallet
+    Wallet -->|Sign Transactions| RPC
+    RPC -->|Blockchain Queries| ModularNFT
 
-### 2. Install Dependencies
-```bash
-# Backend dependencies
-forge install
+    DApp -->|Fetch Metadata| IPFS
+    ModularNFT -->|tokenURI Points To| IPFS
 
-# Frontend dependencies
-cd nft-frontend
-npm install
+    ModularNFT -->|NFT Transfers| ExtMarket
+    ModularNFT -->|Royalty Info| ExtMarket
+
+    style ModularNFT fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style DApp fill:#2196F3,stroke:#1565C0,color:#fff
+    style ExtMarket fill:#FF9800,stroke:#E65100,color:#fff
+    style IPFS fill:#9C27B0,stroke:#6A1B9A,color:#fff
 ```
 
-### 3. Environment Setup
+## Features
 
-**Backend (.env.local):**
-```bash
-# Local Anvil
-RPC_URL=http://localhost:8545
-PRIVATE_KEY=YOUR_KEY
-COLLECTION_NAME="Dev NFT Collection"
-COLLECTION_SYMBOL="DEVNFT"
-MAX_SUPPLY=10000
-MINT_PRICE=0
-BASE_URI="http://localhost:8080/ipfs/"
-```
+**Smart Contract (ModularNFT.sol)**
+- ✅ ERC-721 standard with Enumerable + URIStorage
+- ✅ EIP-2981 royalty system (5% default)
+- ✅ Owner & public minting (batch support)
+- ✅ Configurable parameters (price, supply, base URI)
+- ✅ Secure withdrawal mechanisms
 
-**Frontend (nft-frontend/.env.local):**
-```bash
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
-NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
+**Frontend (Next.js 15)**
+- ✅ Multi-wallet support (RainbowKit)
+- ✅ Real-time NFT collection display
+- ✅ Advanced filtering (rarity, owner, search)
+- ✅ Admin panel for contract owners
+- ✅ IPFS integration with gateway fallbacks
 
-# Contract addresses (update after deployment)
-NEXT_PUBLIC_CONTRACT_ADDRESS_ANVIL=0x5FbDB2315678afecb367f032d93F642f64180aa3
-NEXT_PUBLIC_CONTRACT_ADDRESS_SEPOLIA=0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312
-NEXT_PUBLIC_CONTRACT_ADDRESS_MAINNET=your_mainnet_address
-```
+## Quick Start
 
-> ⚠️ **Important**: After deploying to new networks, update the contract addresses in:
-> - `nft-frontend/lib/contracts/ModularNFT.ts` (CONTRACT_ADDRESSES object)
-> - `nft-frontend/.env.local` (NEXT_PUBLIC_CONTRACT_ADDRESS_* variables)
+See **[Quick Start Guide](docs/guides/QUICK_START.md)**
 
-### 4. Local Development
+## Documentation
 
-**Terminal 1 - Start Anvil:**
-```bash
-anvil
-```
+- 📖 **[Complete Documentation](docs/)** - Full technical documentation
+- 🏗️ **[System Overview](docs/architecture/SYSTEM_OVERVIEW.md)** - Architecture details
+- 📜 **[Contract API](docs/smart-contracts/CONTRACT_API.md)** - Smart contract reference
+- 🚀 **[Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)** - Deploy to any network
+- 🎨 **[NFT Pipeline](docs/nft-assets/NFT_ASSET_PIPELINE.md)** - Asset creation workflow
 
-**Terminal 2 - Deploy Contract:**
-```bash
-forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --broadcast
-```
+## Current Deployment
 
-**Terminal 3 - Start Frontend:**
-```bash
-cd nft-frontend
-npm run dev
-```
+**Network**: Ethereum Sepolia Testnet
+**Contract**: `0xd34F288Fa68b657926989EF286477E9f3C87A825`
+**Verified**: [View on Etherscan](https://sepolia.etherscan.io/address/0xd34F288Fa68b657926989EF286477E9f3C87A825)
 
-**Access:** http://localhost:3000
+**External Marketplace**: `0x2AE08980761CB189DA6ca1f89fffD0C6DAD65a8F`
+**Frontend**: [modular-marketplace.vercel.app](https://modular-marketplace.vercel.app/marketplace)
 
-## 🧪 Testing
+See [docs/deployment/CONTRACT_ADDRESSES.md](docs/deployment/CONTRACT_ADDRESSES.md) for complete addresses.
 
-### Smart Contract Tests
-```bash
-# Run all tests
-forge test
+## Collection: Crypto Code Doodles
 
-# Run with gas reporting
-forge test --gas-report
+- **Total**: 10 unique NFTs (100 max supply)
+- **Rarity**: Common (40%), Rare (30%), Epic (20%), Legend (10%)
+- **Theme**: Coding-themed digital art
+- **Royalty**: 5% creator royalty (EIP-2981)
 
-# Run specific test
-forge test --match-test testOwnerMint
+## Tech Stack
 
-# Coverage report
-forge coverage
-```
-
-### Frontend Testing
-```bash
-cd nft-frontend
-npm run test
-```
-
-## 🌐 Deployment
-
-### Sepolia Testnet
-```bash
-# Deploy to Sepolia
-forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify
-
-# The deployment will output the contract address, copy it for next steps
-# Example output: "Contract Address: 0x72Bd342Ec921BFcfDaeb429403cc1F0Da43fD312"
-
-# Verify contract
-forge verify-contract <CONTRACT_ADDRESS> ModularNFT --chain sepolia
-```
-
-**After deployment, update contract addresses:**
-
-**1. Update Frontend Contract Registry:**
-```typescript
-// Edit: nft-frontend/lib/contracts/ModularNFT.ts
-export const CONTRACT_ADDRESSES = {
-  31337: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Anvil
-  11155111: 'YOUR_SEPOLIA_ADDRESS_HERE', // ← Update this
-  1: 'YOUR_MAINNET_ADDRESS_HERE', // ← Update this
-} as const
-```
-
-**2. Update Frontend Environment:**
-```bash
-# Edit: nft-frontend/.env.local
-NEXT_PUBLIC_CONTRACT_ADDRESS_SEPOLIA=YOUR_SEPOLIA_ADDRESS_HERE
-NEXT_PUBLIC_CONTRACT_ADDRESS_MAINNET=YOUR_MAINNET_ADDRESS_HERE
-```
-
-### Mainnet
-```bash
-# Deploy to Mainnet (use with caution)
-forge script script/Deploy.s.sol --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify
-
-# Update contract addresses in ModularNFT.ts and .env.local (see above)
-```
-
-## 📊 Smart Contract API
-
-### Core Functions
-```solidity
-// Minting
-function publicMint(string tokenURI) payable returns (uint256)
-function ownerMint(address to, string tokenURI) returns (uint256)
-function ownerMintBatch(MintParams[] params) returns (uint256[])
-
-// Configuration
-function setMintPrice(uint256 newPrice)
-function setMintingActive(bool active)
-function setMaxSupply(uint256 newMaxSupply)
-
-// Royalties
-function setDefaultRoyalty(address recipient, uint96 feeNumerator)
-function setTokenRoyalty(uint256 tokenId, address recipient, uint96 feeNumerator)
-
-// Financial
-function withdraw()
-function emergencyWithdraw(address payable to)
-```
-
-### View Functions
-```solidity
-function getCollectionInfo() returns (CollectionInfo)
-function getTokenInfo(uint256 tokenId) returns (TokenInfo)
-function tokensOfOwner(address owner) returns (uint256[])
-function royaltyInfo(uint256 tokenId, uint256 salePrice) returns (address, uint256)
-```
-
-## 🎨 Frontend Components
-
-### Layout Components
-- **Header**: Wallet connection and navigation
-- **HeroSection**: Landing page for non-connected users
-- **NavigationTabs**: Section switching for connected users
-
-### NFT Components
-- **NFTGrid**: Collection display with filtering and sorting
-- **NFTCard**: Individual NFT display with metadata
-- **NFTFiltersControls**: Search and filter interface
-
-### Management Components
-- **MintSection**: Public and owner minting interface
-- **AdminSection**: Complete contract administration
-- **CollectionStatsHeader**: Real-time collection statistics
-
-## 🔧 Configuration
-
-### Supported Networks
-- **Anvil (31337)**: Local development
-- **Sepolia (11155111)**: Testnet deployment
-- **Ethereum Mainnet (1)**: Production deployment
-
-### IPFS Integration
-- **Metadata Storage**: JSON metadata on IPFS
-- **Image Storage**: Decentralized image hosting
-- **Gateway Support**: Multiple IPFS gateways for reliability
-
-## 📈 Performance
-
-### Gas Optimization
-- **Deployment**: ~2.8M gas
-- **Single Mint**: ~140k gas
-- **Batch Mint (5)**: ~450k gas
-- **Admin Operations**: ~45k gas average
-
-### Frontend Performance
-- **SSR Hydration**: Optimized with mounted guards
-- **State Management**: Efficient Web3 state synchronization
-- **Image Loading**: IPFS gateway fallbacks and optimization
-
-## 🛡️ Security
-
-### Smart Contract Security
-- **ReentrancyGuard**: Protection against reentrancy attacks
-- **Access Control**: Owner-only administrative functions
-- **Input Validation**: Comprehensive parameter validation
-- **Error Handling**: Explicit error messages and reverts
-
-### Frontend Security
-- **CSP Headers**: Content Security Policy implementation
-- **Wallet Security**: No private key handling on frontend
-- **Environment Variables**: Secure API key management
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- **Documentation**: [Technical Architecture](docs/architecture.md)
-- **Deployment Guide**: [Deployment Instructions](docs/deployment.md)
-
-## 📞 Support
-
-For support, email [your-email@domain.com] or create an issue in this repository.
+**Smart Contract**: Solidity 0.8.20 | Foundry | OpenZeppelin 4.9.3
+**Frontend**: Next.js 15 | wagmi v2 | RainbowKit | TailwindCSS
+**Storage**: IPFS/Pinata
+**Infrastructure**: Alchemy RPC | Vercel
 
 ---
 
-**Built with ❤️ using Foundry, Next.js, and modern Web3 technologies.**
+**Built using Foundry, Next.js, and modern Web3 technologies.**

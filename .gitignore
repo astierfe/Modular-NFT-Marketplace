@@ -27,3 +27,13 @@ nft-frontend/.env*.local
 next-env.d.ts
 *.tsbuildinfo
 node_modules/
+
+# Documentation artifacts
+docs/**/*.html
+docs/**/*.pdf
+docs/_build/
+archive/diagrams/renders/
+
+.claude/
+
+deployments/
